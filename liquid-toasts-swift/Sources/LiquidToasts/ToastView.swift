@@ -24,9 +24,11 @@ struct ToastView: View {
   @State private var dragOffset: CGFloat = 0
   @State private var isDragging = false
   @State private var isPressed = false
-  /// Measured width of the action button, fed back into the multiline probe so
-  /// the wrap decision accounts for the space the button takes.
-  @State private var actionWidth: CGFloat = 0
+  /// Width of the action button, fed back into the multiline probe so the wrap
+  /// decision accounts for the space the button takes. Seeded from the label's
+  /// pre-measured width (see the init); the live button's measurement replaces
+  /// it — normally within a point.
+  @State private var actionWidth: CGFloat
   /// True when the message wraps onto more than one line. Seeded synchronously
   /// by [ToastPreMeasurement] so the row's very first layout is already at its
   /// final height (entering short and growing when the probe landed made the
@@ -55,14 +57,18 @@ struct ToastView: View {
     self.onSwipe = onSwipe
     self.onPressStart = onPressStart
     self.onPressEnd = onPressEnd
-    // A single boundingRect — cheap, and ToastRow's `.equatable()` gate means
-    // rows are only rebuilt when the toast (or host width) actually changed.
-    // SwiftUI reads the initial value on first appearance only; afterwards the
-    // preference handler below owns the state.
+    // A couple of boundingRects — cheap, and ToastRow's `.equatable()` gate
+    // means rows are only rebuilt when the toast (or host width) actually
+    // changed. SwiftUI reads the initial values on first appearance only;
+    // afterwards the preference handlers below own the state.
+    let premeasuredActionWidth = toast.action
+      .map { ToastPreMeasurement.actionButtonWidth(label: $0.label) } ?? 0
+    _actionWidth = State(initialValue: premeasuredActionWidth)
     _isMultiline = State(initialValue: ToastPreMeasurement.wrapsToMultiline(
       message: toast.message,
       maxLines: toast.maxLines,
       hasAction: toast.action != nil,
+      actionWidth: premeasuredActionWidth,
       showsLeading: toast.showsLeadingSlot,
       deviceWidth: deviceWidth))
   }

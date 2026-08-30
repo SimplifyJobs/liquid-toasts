@@ -121,10 +121,35 @@ struct ToastMeasurementProbes: View, Equatable {
 /// has been measured yet); the probe still runs afterwards and, in the rare
 /// case the two layouts disagree, `ToastView` corrects with the stack spring.
 enum ToastPreMeasurement {
+  /// The width the live `ActionButton` will render at: the label in the
+  /// button's font plus the capsule's horizontal insets. Seeds
+  /// `ToastView.actionWidth` so the wrap decision doesn't shift when the real
+  /// button's measurement lands (a wide label vs. the flat estimate).
+  static func actionButtonWidth(label: String) -> CGFloat {
+    let size = UIFont.preferredFont(forTextStyle: .subheadline).pointSize
+    let base = UIFont.systemFont(ofSize: size, weight: .semibold)
+    let font: UIFont
+    if let rounded = base.fontDescriptor.withDesign(.rounded) {
+      font = UIFont(descriptor: rounded, size: size)
+    } else {
+      font = base
+    }
+    let text = (label as NSString).boundingRect(
+      with: CGSize(width: .greatestFiniteMagnitude, height: .greatestFiniteMagnitude),
+      options: [.usesLineFragmentOrigin, .usesFontLeading],
+      attributes: [.font: font],
+      context: nil)
+    return ceil(text.width) + ToastMetrics.actionHorizontalPadding * 2
+  }
+
+  /// The wrap decision. [actionWidth] is the pre-measured button width from
+  /// [actionButtonWidth] (falls back to the flat estimate when zero, exactly
+  /// like the probe before its first `ActionWidthKey` lands).
   static func wrapsToMultiline(
     message: String,
     maxLines: Int,
     hasAction: Bool,
+    actionWidth: CGFloat,
     showsLeading: Bool,
     deviceWidth: CGFloat
   ) -> Bool {
@@ -135,7 +160,9 @@ enum ToastPreMeasurement {
     let trailing = ToastMetrics.trailingPadding(multiline: true, hasAction: hasAction)
     let spacing = ToastMetrics.rowSpacing(multiline: true)
     let glyph: CGFloat = showsLeading ? ToastMetrics.iconSlot + spacing : 0
-    let act: CGFloat = hasAction ? ToastMetrics.actionWidthEstimate + spacing : 0
+    let act: CGFloat = hasAction
+      ? (actionWidth > 0 ? actionWidth : ToastMetrics.actionWidthEstimate) + spacing
+      : 0
     let reference = max(
       ToastMetrics.probeMinReferenceWidth,
       ToastMetrics.multilineWidth(deviceWidth: deviceWidth) - leading - trailing - glyph - act)

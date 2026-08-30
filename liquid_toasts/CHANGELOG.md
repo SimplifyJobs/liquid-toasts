@@ -55,7 +55,8 @@ facade and one parameter that never did anything.
   `supportsDynamicIslandOrigin` key is gone with the feature.
 * **Fixed: sibling jank when a multiline toast enters the stack.** The wrap
   decision is now pre-measured synchronously (a UIKit twin of the off-screen
-  probe), so a tall toast's very first layout is already at its final height.
+  probe, including the action button's real label width), so a tall toast's
+  very first layout is already at its final height.
   Previously it entered at single-line height and grew a frame later when the
   probe landed — an unanimated re-layout that made the already-visible toasts
   jump a few pixels mid-push before the spring caught up. The rare case where

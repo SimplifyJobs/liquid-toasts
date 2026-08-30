@@ -51,6 +51,11 @@ enum ToastMetrics {
   static let linearProgressWidth: CGFloat = 160
   /// Estimated action button width until its first real measurement lands.
   static let actionWidthEstimate: CGFloat = 72
+
+  /// Horizontal inset inside the action button's capsule, each side. Shared by
+  /// the live `ActionButton` and `ToastPreMeasurement.actionButtonWidth` so the
+  /// pre-measured width matches the rendered one.
+  static let actionHorizontalPadding: CGFloat = 16
   /// Floor for the multiline probe's reference text width.
   static let probeMinReferenceWidth: CGFloat = 120
 

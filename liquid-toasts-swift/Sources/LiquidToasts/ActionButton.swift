@@ -27,7 +27,7 @@ struct ActionButton: View {
           SpinnerView(color: color)
         }
       }
-      .padding(.horizontal, 16)
+      .padding(.horizontal, ToastMetrics.actionHorizontalPadding)
       .padding(.vertical, 9)
       .background(color.opacity(scheme == .dark ? 0.24 : 0.15), in: Capsule())
       .contentShape(Capsule())
