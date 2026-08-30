@@ -53,6 +53,14 @@ facade and one parameter that never did anything.
   geometry / cutout snapshot (`toast.queryGeometry()`) still reports the
   cutout (`hasDynamicIsland`, `cutoutType`, `exclusionRect`), but its
   `supportsDynamicIslandOrigin` key is gone with the feature.
+* **Fixed: sibling jank when a multiline toast enters the stack.** The wrap
+  decision is now pre-measured synchronously (a UIKit twin of the off-screen
+  probe), so a tall toast's very first layout is already at its final height.
+  Previously it entered at single-line height and grew a frame later when the
+  probe landed — an unanimated re-layout that made the already-visible toasts
+  jump a few pixels mid-push before the spring caught up. The rare case where
+  the live layout disagrees with the pre-measurement now animates instead of
+  snapping.
 * **The checkout-folder rename caveat is gone** — the plugin folder inside the
   repo is already named `liquid_toasts`, so Flutter's SwiftPM integration
   derives the right package identity in every install mode (git, path, or a

@@ -27,17 +27,45 @@ struct ToastView: View {
   /// Measured width of the action button, fed back into the multiline probe so
   /// the wrap decision accounts for the space the button takes.
   @State private var actionWidth: CGFloat = 0
-  /// True when the message wraps onto more than one line — measured off-screen.
-  /// Multiline toasts trade the hugging capsule for a wider, left-aligned
-  /// rounded rectangle.
-  @State private var isMultiline = false
+  /// True when the message wraps onto more than one line. Seeded synchronously
+  /// by [ToastPreMeasurement] so the row's very first layout is already at its
+  /// final height (entering short and growing when the probe landed made the
+  /// rest of the stack jump); the off-screen probe confirms afterwards and any
+  /// later change animates. Multiline toasts trade the hugging capsule for a
+  /// wider, left-aligned rounded rectangle.
+  @State private var isMultiline: Bool
   /// Hugging (single-line) width, measured off-screen. Used as the concrete
   /// frame width in single-line mode so the toast can *animate* between it and
   /// `multilineWidth` when the message crosses the wrap boundary.
   @State private var naturalWidth: CGFloat = 0
-  /// Whether the first off-screen measurement has landed. The initial multiline
-  /// decision is applied instantly (no entrance wobble); later changes animate.
-  @State private var didMeasure = false
+
+  init(
+    toast: ToastModel,
+    deviceWidth: CGFloat,
+    onTapBody: @escaping () -> Void,
+    onAction: @escaping () -> Void,
+    onSwipe: @escaping () -> Void,
+    onPressStart: @escaping () -> Void,
+    onPressEnd: @escaping () -> Void
+  ) {
+    self.toast = toast
+    self.deviceWidth = deviceWidth
+    self.onTapBody = onTapBody
+    self.onAction = onAction
+    self.onSwipe = onSwipe
+    self.onPressStart = onPressStart
+    self.onPressEnd = onPressEnd
+    // A single boundingRect — cheap, and ToastRow's `.equatable()` gate means
+    // rows are only rebuilt when the toast (or host width) actually changed.
+    // SwiftUI reads the initial value on first appearance only; afterwards the
+    // preference handler below owns the state.
+    _isMultiline = State(initialValue: ToastPreMeasurement.wrapsToMultiline(
+      message: toast.message,
+      maxLines: toast.maxLines,
+      hasAction: toast.action != nil,
+      showsLeading: toast.showsLeadingSlot,
+      deviceWidth: deviceWidth))
+  }
 
   /// Width of a multiline toast: the full device width minus a comfortable
   /// horizontal margin on each side, so it reads clearly inset (like an iOS
@@ -129,14 +157,13 @@ struct ToastView: View {
       .onPreferenceChange(MessageHeightKey.self) { height in
         // The multiline decision: if the message needs more than one line at
         // the multiline reference width, commit to the multiline treatment.
+        // The pre-measured seed (see the init) makes this a no-op on entrance;
+        // a real change — a morph crossing the wrap boundary, or the rare case
+        // where the live Text layout disagrees with the UIKit pre-measurement —
+        // animates so the rest of the stack shifts smoothly instead of snapping.
         let lineHeight = UIFont.preferredFont(forTextStyle: .subheadline).lineHeight
         let multi = deviceWidth > 0 && height > lineHeight * 1.5
-        if !didMeasure {
-          isMultiline = multi // first measurement: apply instantly (no entrance wobble)
-          didMeasure = true
-        } else if multi != isMultiline {
-          // A morph (e.g. an upload's progress -> "done") crossed the wrap
-          // boundary — animate the width + reflow instead of snapping.
+        if multi != isMultiline {
           withAnimation(ToastMetrics.stackSpring) {
             isMultiline = multi
           }

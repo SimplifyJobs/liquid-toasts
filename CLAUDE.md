@@ -217,7 +217,10 @@ and no required-reason APIs) as a `.process` resource.
   glass surface, drag/tap/press gestures, accessibility.
 - `ToastContentView` — the row (leading slot / text column / action button) +
   `AvatarSlot`/`AvatarView`/`CircularProgressView`.
-- `ToastMeasurement.swift` — the two hidden off-screen probes (wrap decision +
+- `ToastMeasurement.swift` — `ToastPreMeasurement`, the synchronous UIKit twin
+  of the wrap probe that seeds a row's initial wrap state so its **first**
+  layout is already final-height (entering short and growing a frame later
+  made the rest of the stack visibly jump); plus the two hidden off-screen probes (wrap decision +
   hugging width) behind an Equatable inputs struct; they only emit
   preferences, `ToastView` owns the handlers.
 - `ToastMetrics.swift` — every shared layout constant + the springs. The

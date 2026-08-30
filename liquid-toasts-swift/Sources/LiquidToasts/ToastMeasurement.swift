@@ -110,6 +110,52 @@ struct ToastMeasurementProbes: View, Equatable {
   }
 }
 
+// MARK: - Pre-measurement
+
+/// Synchronous UIKit twin of the multiline probe, run when a row is built so a
+/// toast's **first** layout already has the right wrap state. Without it, a
+/// tall toast entered the stack at single-line height and grew a frame later
+/// when the off-screen probe landed — an unanimated re-layout that made every
+/// already-visible toast jump mid-push. Mirrors the probe's reference-width
+/// math exactly (the action width falls back to the estimate; no live button
+/// has been measured yet); the probe still runs afterwards and, in the rare
+/// case the two layouts disagree, `ToastView` corrects with the stack spring.
+enum ToastPreMeasurement {
+  static func wrapsToMultiline(
+    message: String,
+    maxLines: Int,
+    hasAction: Bool,
+    showsLeading: Bool,
+    deviceWidth: CGFloat
+  ) -> Bool {
+    // Matches the probe: lineLimit(1) can never report a wrap, and the live
+    // handler treats an unknown host width as single-line.
+    guard deviceWidth > 0, maxLines > 1 else { return false }
+    let leading = ToastMetrics.leadingPadding(multiline: true, hasLeadingSlot: showsLeading, tallRow: true)
+    let trailing = ToastMetrics.trailingPadding(multiline: true, hasAction: hasAction)
+    let spacing = ToastMetrics.rowSpacing(multiline: true)
+    let glyph: CGFloat = showsLeading ? ToastMetrics.iconSlot + spacing : 0
+    let act: CGFloat = hasAction ? ToastMetrics.actionWidthEstimate + spacing : 0
+    let reference = max(
+      ToastMetrics.probeMinReferenceWidth,
+      ToastMetrics.multilineWidth(deviceWidth: deviceWidth) - leading - trailing - glyph - act)
+    let base = UIFont.preferredFont(forTextStyle: .subheadline)
+    let font: UIFont
+    if let rounded = base.fontDescriptor.withDesign(.rounded) {
+      font = UIFont(descriptor: rounded, size: base.pointSize)
+    } else {
+      font = base
+    }
+    let bounds = (message as NSString).boundingRect(
+      with: CGSize(width: reference, height: .greatestFiniteMagnitude),
+      options: [.usesLineFragmentOrigin, .usesFontLeading],
+      attributes: [.font: font],
+      context: nil)
+    // Same threshold the live handler applies to the probe's height.
+    return bounds.height > base.lineHeight * 1.5
+  }
+}
+
 // MARK: - Preference keys
 
 /// Carries the rendered height of the off-screen message probe up to `ToastView`
