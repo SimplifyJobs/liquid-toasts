@@ -5,7 +5,7 @@ import UIKit
 /// classifies by safe-area insets + a centered pill approximation, which is
 /// enough to anchor the Dynamic Island origin animation.
 @MainActor
-enum DynamicIslandGeometry {
+public enum DynamicIslandGeometry {
   static func safeTop(_ window: UIWindow?) -> CGFloat { window?.safeAreaInsets.top ?? 0 }
 
   static func isPortrait(_ window: UIWindow?) -> Bool {
@@ -36,8 +36,10 @@ enum DynamicIslandGeometry {
     return CGRect(x: (width - pillWidth) / 2, y: topInset, width: pillWidth, height: pillHeight)
   }
 
-  /// Advisory snapshot for the Dart `queryGeometry` call.
-  static func geometrySnapshot(_ window: UIWindow?) -> [String: Any] {
+  /// Advisory device-geometry + capability snapshot (safe area, screen, cutout,
+  /// glass mode). Wire-shaped: this is exactly what the Dart `queryGeometry`
+  /// call returns. Pass `ToastOverlayHost.activeWindow()`.
+  public static func geometrySnapshot(_ window: UIWindow?) -> [String: Any] {
     let insets = window?.safeAreaInsets ?? .zero
     let bounds = window?.bounds ?? UIScreen.main.bounds
     let type = cutoutType(window)

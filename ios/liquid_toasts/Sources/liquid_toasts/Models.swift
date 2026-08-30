@@ -3,7 +3,12 @@ import UIKit
 
 // MARK: - Enums (raw values mirror the Dart `.name` wire format)
 
-enum ToastSemantic: String {
+/// Built-in semantic intent: drives the default symbol, tint, duration,
+/// line cap and appear-haptic (see `SemanticDefaults`).
+///
+/// Raw values are wire strings shared with the Flutter bridge — see the
+/// wire-protocol invariants in CLAUDE.md.
+public enum ToastSemantic: String, Sendable {
   case success, error, warning, info, none
 
   /// Default SF Symbol for this intent (nil for `.none`).
@@ -29,19 +34,29 @@ enum ToastSemantic: String {
   }
 }
 
-enum ToastGlassIntent: String { case adaptive, liquid, frosted, solid, none }
+/// Requested glass treatment. The real decision (native Liquid Glass on
+/// iOS 26+, frosted material below, opaque under Reduce Transparency) is made
+/// at render time; this only expresses intent.
+public enum ToastGlassIntent: String, Sendable { case adaptive, liquid, frosted, solid, none }
 
-enum ToastContentState: String { case `static`, loading }
+/// Whether the toast renders a spinner (`loading`) or static content.
+public enum ToastContentState: String, Sendable { case `static`, loading }
 
-enum ToastHapticKind: String { case none, success, warning, error, selection }
+/// Haptic fired when the toast appears.
+public enum ToastHapticKind: String, Sendable { case none, success, warning, error, selection }
 
-enum ToastSymbolEffect: String {
+/// Animated effect applied to the toast's SF Symbol. Effects unavailable on the
+/// running OS degrade gracefully (see `IconView`).
+public enum ToastSymbolEffect: String, Sendable {
   case none, bounce, pulse, wiggle, rotate, breathe, variableColor, drawOn
 }
 
-enum ToastProgressStyle: String { case linear, circular }
+/// How a determinate progress value renders: a bar under the text, or a ring in
+/// the leading slot (in place of the icon).
+public enum ToastProgressStyle: String, Sendable { case linear, circular }
 
-enum ToastPositionModel: String {
+/// Where a toast anchors. Each position is an independent vertical stack.
+public enum ToastPositionModel: String, Sendable {
   case topCenter, topLeading, topTrailing
   case center
   case bottomCenter, bottomLeading, bottomTrailing
@@ -70,7 +85,9 @@ enum ToastPositionModel: String {
   }
 }
 
-enum ActionRole: String {
+/// Semantic role of the action button. The color is derived from the role
+/// (adaptive) unless `ToastActionModel.color` overrides it.
+public enum ToastActionRole: String, Sendable {
   case primary, secondary, destructive, success, warning, neutral
 
   var color: Color {
@@ -88,12 +105,14 @@ enum ActionRole: String {
 // MARK: - Color
 
 /// A `{light, dark}` color pair, resolved natively against the current color
-/// scheme.
-struct AdaptiveColor: Equatable {
-  let light: Color
-  let dark: Color
+/// scheme — the context-free equivalent of a dynamic system color.
+public struct ToastColor: Equatable {
+  public let light: Color
+  public let dark: Color
 
-  init(light: Color, dark: Color) {
+  /// A pair that resolves per color scheme. Pass the same value twice for a
+  /// frozen (non-adaptive) color.
+  public init(light: Color, dark: Color) {
     self.light = light
     self.dark = dark
   }
@@ -103,20 +122,28 @@ struct AdaptiveColor: Equatable {
 
 // MARK: - Style / Action models
 
-struct ToastStyleModel: Equatable {
-  var tint: AdaptiveColor?
-  var background: AdaptiveColor?
-  var foreground: AdaptiveColor?
-  var iconColor: AdaptiveColor?
-  var glass: ToastGlassIntent?
-  var cornerRadius: CGFloat?
-  var symbolEffect: ToastSymbolEffect = .none
+/// Per-toast visual override. Every field is null-means-inherit: anything left
+/// nil falls back to the semantic-derived value computed at render time.
+public struct ToastStyleModel: Equatable {
+  /// Accent tint — colors the icon, spinner and progress indicator, never the
+  /// surface.
+  public var tint: ToastColor?
+  /// Surface color. Tints the glass on iOS 26+, fills the surface below.
+  public var background: ToastColor?
+  /// Title + message color.
+  public var foreground: ToastColor?
+  /// Icon color (defaults to the tint / semantic color).
+  public var iconColor: ToastColor?
+  public var glass: ToastGlassIntent?
+  /// nil lets the renderer choose (capsule when compact, rounded rect when not).
+  public var cornerRadius: CGFloat?
+  public var symbolEffect: ToastSymbolEffect = .none
 
-  init(
-    tint: AdaptiveColor? = nil,
-    background: AdaptiveColor? = nil,
-    foreground: AdaptiveColor? = nil,
-    iconColor: AdaptiveColor? = nil,
+  public init(
+    tint: ToastColor? = nil,
+    background: ToastColor? = nil,
+    foreground: ToastColor? = nil,
+    iconColor: ToastColor? = nil,
     glass: ToastGlassIntent? = nil,
     cornerRadius: CGFloat? = nil,
     symbolEffect: ToastSymbolEffect = .none
@@ -131,19 +158,31 @@ struct ToastStyleModel: Equatable {
   }
 }
 
-struct ToastActionModel: Equatable {
-  let actionId: String
-  let label: String
-  let role: ActionRole
-  let color: AdaptiveColor?
-  let dismissOnPress: Bool
-  let loadingOnPress: Bool
+/// The single (at most one) action button on a toast.
+///
+/// Low-level: this is the *rendered* description only. The press callback never
+/// lives here — the renderer reports `actionId` back through the event stream
+/// and the owning facade (Dart's engine, or `LiquidToast` natively) runs the
+/// closure it kept keyed by id.
+public struct ToastActionModel: Equatable {
+  /// Correlates an `actionTapped` event back to the caller's closure. A facade
+  /// mints a fresh one on every content change so a tap that raced an update is
+  /// dropped instead of invoking the superseded action.
+  public let actionId: String
+  public let label: String
+  public let role: ToastActionRole
+  public let color: ToastColor?
+  /// Whether the toast dismisses itself once the tap is delivered.
+  public let dismissOnPress: Bool
+  /// Whether pressing swaps the label for a spinner and keeps the toast up
+  /// until the facade calls `ToastManager.finishAction(id:)` (or dismisses it).
+  public let loadingOnPress: Bool
 
-  init(
+  public init(
     actionId: String,
     label: String,
-    role: ActionRole = .primary,
-    color: AdaptiveColor? = nil,
+    role: ToastActionRole = .primary,
+    color: ToastColor? = nil,
     dismissOnPress: Bool = true,
     loadingOnPress: Bool = false
   ) {
@@ -161,70 +200,87 @@ struct ToastActionModel: Equatable {
 /// Reference-equality wrapper so [ToastModel] can synthesize `==` without
 /// ever comparing pixel data — a decoded image is immutable, so identity is
 /// the right equivalence.
-struct ToastImage: Equatable {
-  let uiImage: UIImage
-  static func == (lhs: ToastImage, rhs: ToastImage) -> Bool {
+public struct ToastImage: Equatable {
+  public let uiImage: UIImage
+
+  public init(uiImage: UIImage) { self.uiImage = uiImage }
+
+  public static func == (lhs: ToastImage, rhs: ToastImage) -> Bool {
     lhs.uiImage === rhs.uiImage
   }
 }
 
-struct ToastModel: Identifiable, Equatable {
-  let id: String
+/// The rendered description of one toast — the single value the overlay draws
+/// from, and the native mirror of Dart's `Toast`.
+///
+/// Low-level: prefer the `LiquidToast` facade, which assembles these (and owns
+/// the callbacks) for you. Build one directly only when driving
+/// [ToastManager] yourself.
+public struct ToastModel: Identifiable, Equatable {
+  /// Opaque, caller-minted id. Used for events, frames and timers; it is what
+  /// every [ToastManager] entry point addresses.
+  public let id: String
 
   /// The SwiftUI view identity of this toast's row — normally the same as [id],
   /// but held stable across an in-place group re-show (a "shake") so the row
   /// morphs/shakes instead of exit+entering. Distinct from [id], which is the
   /// wire id used for events, frames, and the auto-dismiss timer.
-  var identity: String
+  public internal(set) var identity: String
 
   /// Bumped each time an already-visible group toast is re-shown with unchanged
   /// text: the row observes the change and plays a one-shot horizontal shake.
   /// Runtime-only (never decoded from the wire).
-  var shakeToken: Int = 0
-  var message: String
-  var title: String?
-  var icon: String?
+  public internal(set) var shakeToken: Int = 0
+  public var message: String
+  public var title: String?
+  /// SF Symbol name. When nil the symbol is derived from [semantic].
+  public var icon: String?
 
   /// The decoded leading image. Arrives asynchronously (decode happens off the
   /// main thread) — nil until then, and stays nil for toasts without one.
-  var image: ToastImage?
+  public var image: ToastImage?
 
   /// True when the caller supplied image bytes. Reserves the avatar slot
   /// from the first frame so the layout doesn't jump when the decoded pixels
   /// land; the manager clears it if the decode fails (the slot then collapses).
-  var expectsImage: Bool
-  var semantic: ToastSemantic
-  var style: ToastStyleModel?
-  var position: ToastPositionModel
-  var state: ToastContentState
-  var persistent: Bool
-  var durationMs: Int?
-  var useDynamicIslandOrigin: Bool
-  var progress: Double?
-  var progressStyle: ToastProgressStyle
-  var groupKey: String?
-  var haptic: ToastHapticKind
-  var semanticsLabel: String?
-  var maxLines: Int
-  var titleMaxLines: Int
-  var tapToDismiss: Bool
-  var hasTap: Bool
-  var action: ToastActionModel?
+  public var expectsImage: Bool
+  public var semantic: ToastSemantic
+  public var style: ToastStyleModel?
+  public var position: ToastPositionModel
+  public var state: ToastContentState
+  public var persistent: Bool
+  public var durationMs: Int?
+  public var useDynamicIslandOrigin: Bool
+  public var progress: Double?
+  public var progressStyle: ToastProgressStyle
+  /// De-dup / replace key: presenting a toast whose key matches a live one
+  /// morphs that toast in place instead of stacking a duplicate.
+  public var groupKey: String?
+  public var haptic: ToastHapticKind
+  public var semanticsLabel: String?
+  public var maxLines: Int
+  public var titleMaxLines: Int
+  public var tapToDismiss: Bool
+  /// Whether the owner wants `tapped` events for this toast. The tap callback
+  /// itself lives facade-side, keyed by [id].
+  public var hasTap: Bool
+  public var action: ToastActionModel?
 
   /// Runtime-only, never decoded from the wire: true while the action's async
   /// `onPressed` runs — the button shows a spinner. Lives on the model (like
   /// `progress`) so flipping it re-renders only the affected row.
-  var isActionBusy = false
+  public internal(set) var isActionBusy = false
 
   /// Builds a toast. Defaults mirror the wire defaults (see the decoding
   /// extension in `WireModels.swift`), so a payload that omits a key and a
   /// caller that omits the argument produce the same toast.
   ///
-  /// Image pixels are never passed here: the caller hands the raw `Data` to
+  /// Image pixels can be passed here directly ([image]); a caller holding
+  /// undecoded bytes instead hands the raw `Data` to
   /// `ToastManager.present(_:imageData:)`, which decodes off the main thread
-  /// and attaches the result. Set [expectsImage] so the slot is reserved from
+  /// and attaches the result — set [expectsImage] so the slot is reserved from
   /// the first frame.
-  init(
+  public init(
     id: String,
     message: String,
     identity: String? = nil,

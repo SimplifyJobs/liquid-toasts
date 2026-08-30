@@ -9,9 +9,9 @@ import Foundation
 /// could be unit-tested from a Flutter-free subtarget later.
 @MainActor
 final class DeadlineScheduler {
-  /// Fired when a deadline expires. `reason` is `"timeout"` (timer fired live)
-  /// or `"appBackgrounded"` (found past-due while foregrounding).
-  var onExpire: ((_ id: String, _ reason: String) -> Void)?
+  /// Fired when a deadline expires. `reason` is `.timeout` (timer fired live)
+  /// or `.appBackgrounded` (found past-due while foregrounding).
+  var onExpire: ((_ id: String, _ reason: ToastDismissReason) -> Void)?
 
   /// Wall-clock deadlines. Survive backgrounding; the tasks that watch them
   /// are cancelled in the background and rebuilt on foreground.
@@ -83,14 +83,14 @@ final class DeadlineScheduler {
   }
 
   /// Sweeps the stored deadlines: past-due ones expire immediately (reason
-  /// `"appBackgrounded"`), live ones get fresh watcher tasks.
+  /// `.appBackgrounded`), live ones get fresh watcher tasks.
   func appWillEnterForeground() {
     backgrounded = false
     let now = Date()
     for (id, deadline) in deadlines {
       if deadline <= now {
         deadlines[id] = nil
-        onExpire?(id, "appBackgrounded")
+        onExpire?(id, .appBackgrounded)
       } else {
         schedule(id: id, fireAt: deadline)
       }
@@ -106,7 +106,7 @@ final class DeadlineScheduler {
       try? await Task.sleep(for: .seconds(interval))
       guard !Task.isCancelled, let self, !self.backgrounded else { return }
       self.deadlines[id] = nil
-      self.onExpire?(id, "timeout")
+      self.onExpire?(id, .timeout)
     }
   }
 

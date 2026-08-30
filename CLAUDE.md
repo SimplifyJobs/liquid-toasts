@@ -87,10 +87,38 @@ commands) and an event channel (native→Dart lifecycle events).
 
 ### iOS side (`ios/liquid_toasts/Sources/liquid_toasts/`)
 
+Two layers, split by access control (and, from Phase 3 on, by SwiftPM module):
+the **core** — everything except the three bridge files — is Flutter-free and
+carries the `public` API; the **bridge** (`LiquidToastsPlugin.swift`,
+`WireModels.swift`, `WireDecoding.swift`) is the only Flutter-aware code and
+must use nothing but core `public` API. Native apps get `LiquidToast`, a static
+facade mirroring the Dart `toast` API; `ToastManager` under it is public too but
+documented as low-level. Everything else stays `internal` — see
+`docs/monorepo-plan.md`.
+
 - `LiquidToastsPlugin.swift` — the `FlutterPlugin`/`FlutterStreamHandler`. Decodes
   channel args into `ToastModel`s and drives the manager. Flutter calls channel
   handlers on the main thread, so it uses `MainActor.assumeIsolated` and touches
-  UI directly with no actor hop.
+  UI directly with no actor hop. Owns the **only** mapping from the typed
+  `ToastEventPayload` back to the wire dictionaries (`wireEvent`), and
+  deliberately drops `.flushed` — a flush is silent by contract.
+- `LiquidToast.swift` — the native facade: `show/success/error/warning/info/
+  loading`, `promise`, `configure`, `dismiss(All)`. Thin wrappers over one
+  private `present(...)` funnel, mirroring `Toaster._semanticShow`.
+- `LiquidToastCenter.swift` — the facade's engine, mirroring `ToastEngine`:
+  the native registry (handle, action/tap callbacks, `activeActionId`,
+  `generation`), native id minting (`lt_native_<uuid>`, which can never collide
+  with Dart's `lt_<sessionPrefix>_<nnnn>`), and the event router. No op chain
+  and no handshake — `ToastManager` is a direct call away.
+- `LiquidToastHandle.swift` / `LiquidToastAction.swift` /
+  `LiquidToastConfiguration.swift` — the facade's value types (patch-style
+  `update`, `onDismissed`/`dismissal`, the action + its callback, app-wide
+  defaults and the `ToastDuration` "omitted" sentinel).
+- `SemanticDefaults.swift` — **LOCKSTEP with `lib/src/semantic_defaults.dart`**:
+  the per-semantic duration / line cap / appear-haptic table the native facade
+  uses. Both files carry the cross-reference; change both or neither.
+- `ToastEvents.swift` — `ToastDismissReason` (raw values = wire strings),
+  the typed `ToastEventPayload` and the listener token.
 - `ToastOverlayHost.swift` — singleton that installs a transparent
   `PassthroughHostView` + `UIHostingController` into the **same window** as
   Flutter content (so Liquid Glass can sample the live app behind it). The host
@@ -99,8 +127,10 @@ commands) and an event channel (native→Dart lifecycle events).
   toast gets its entrance transition.
 - `ToastManager.swift` — `@MainActor ObservableObject`, the single source of
   truth for the stack. Owns the queue, replace-by-`groupKey`, per-position
-  `maxVisible` enforcement, exactly-once teardown, and emits lifecycle events
-  via `onEvent`. **Publish surface is deliberately minimal**: `toasts` is the
+  `maxVisible` enforcement, exactly-once teardown, and **fans typed lifecycle
+  events out to every listener** (`addEventListener` → `ToastEventToken`) —
+  the bridge and the native facade subscribe independently and each ignores
+  ids it doesn't own. **Publish surface is deliberately minimal**: `toasts` is the
   one SwiftUI input (runtime flags like `isActionBusy` live on the models);
   `frames` is intentionally NOT `@Published` (only the host's hit-test reads
   it, imperatively — publishing it would invalidate the whole container on
@@ -132,9 +162,14 @@ commands) and an event channel (native→Dart lifecycle events).
   (iOS 17–25) vs opaque (Reduce Transparency); those `#available` blocks are
   compile-time API gates — `Capabilities.swift` centralizes only the
   value-level checks (wire strings).
-- `Models.swift` — `ToastModel` and friends (all `Equatable`; the image
-  compares by identity via `ToastImage`); mirrors the Dart wire format.
-- `WireDecoding.swift` — `[String: Any]` decode helpers (NSNumber-aware).
+- `Models.swift` — `ToastModel` and friends (all `Equatable` and `public` with
+  memberwise inits; the image compares by identity via `ToastImage`); mirrors
+  the Dart wire format. Runtime-only fields (`identity`, `shakeToken`,
+  `isActionBusy`) are `public internal(set)`.
+- `WireModels.swift` — **bridge**: the `init?(wire:)`/`init?(arguments:)`
+  decoders that turn channel payloads into those models.
+- `WireDecoding.swift` — **bridge**: `[String: Any]` decode helpers
+  (NSNumber-aware).
 - `DynamicIslandGeometry.swift` — device geometry snapshot for `queryGeometry`.
 - `Haptics.swift` — maps the toast's haptic enum to `UINotificationFeedbackGenerator`.
 

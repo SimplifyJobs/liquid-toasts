@@ -8,6 +8,12 @@ import UIKit
 public class LiquidToastsPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
   private var eventSink: FlutterEventSink?
 
+  /// This instance's subscription to the shared stack. Registered once (the
+  /// manager fans out to every listener, so re-registering per call would stack
+  /// duplicates) and kept for the plugin's lifetime; the listener holds only a
+  /// weak reference back, and a nil sink simply drops the event.
+  private var eventToken: ToastEventToken?
+
   public static func register(with registrar: FlutterPluginRegistrar) {
     let methods = FlutterMethodChannel(name: "liquid_toasts", binaryMessenger: registrar.messenger())
     let events = FlutterEventChannel(name: "liquid_toasts/events", binaryMessenger: registrar.messenger())
@@ -32,8 +38,15 @@ public class LiquidToastsPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
   private func route(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     let host = ToastOverlayHost.shared
     let manager = host.manager
-    // Keep the event sink wired to this plugin instance.
-    manager.onEvent = { [weak self] payload in self?.eventSink?(payload) }
+    // Wire this plugin instance to the stack's events, once. Dart always calls
+    // `handshake` before it listens, so the subscription is in place well
+    // before the first event.
+    if eventToken == nil {
+      eventToken = manager.addEventListener { [weak self] payload in
+        guard let self, let map = LiquidToastsPlugin.wireEvent(payload) else { return }
+        self.eventSink?(map)
+      }
+    }
 
     let args = call.arguments as? [String: Any]
 
@@ -93,13 +106,15 @@ public class LiquidToastsPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
         result(FlutterError(code: "INVALID_ARGS", message: "dismiss: missing id", details: nil))
         return
       }
-      let ok = manager.dismiss(id: id, reason: "manual")
+      let ok = manager.dismiss(id: id, reason: .manual)
       var res: [String: Any] = ["id": id, "dismissed": ok]
       if !ok { res["reason"] = "unknown_id" }
       result(res)
 
     case "dismissAll":
-      let reason = (args?["reason"] as? String) ?? "dismissAll"
+      // Dart always sends `dismissAll`; an unknown string falls back to it
+      // rather than echoing an unmapped reason back over the wire.
+      let reason = ToastDismissReason(rawValue: args?["reason"] as? String ?? "") ?? .dismissAll
       result(["dismissedIds": manager.dismissAll(reason: reason)])
 
     case "finishAction":
@@ -121,6 +136,36 @@ public class LiquidToastsPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  // MARK: - Events
+
+  /// Maps a typed core event onto the exact dictionary Dart's
+  /// `ToastEvent.fromMap` expects, or nil for an event that deliberately does
+  /// not cross the wire. Keys and strings are **wire protocol** — see the
+  /// invariants in CLAUDE.md; keep them in lockstep with
+  /// `lib/src/toast_event.dart`.
+  private static func wireEvent(_ payload: ToastEventPayload) -> [String: Any]? {
+    var map: [String: Any] = ["id": payload.id, "tsMs": payload.timestampMs]
+    switch payload.kind {
+    case .shown(let stackIndex):
+      map["event"] = "shown"
+      map["stackIndex"] = stackIndex
+    case .actionTapped(let actionId):
+      map["event"] = "actionTapped"
+      map["actionId"] = actionId
+    case .tapped:
+      map["event"] = "tapped"
+    case .dismissed(let reason):
+      map["event"] = "dismissed"
+      map["reason"] = reason.rawValue
+    case .flushed:
+      // A flush IS the hot-restart handshake: the sink that owned these toasts
+      // is dead and the fresh isolate has never heard of their ids. Silence is
+      // the contract — see `ToastManager.flushAll`.
+      return nil
+    }
+    return map
   }
 
   // MARK: - FlutterStreamHandler

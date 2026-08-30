@@ -23,7 +23,7 @@ extension Color {
   }
 }
 
-extension AdaptiveColor {
+extension ToastColor {
   /// Decodes a `{light, dark}` pair of ARGB ints; nil unless both are present.
   init?(wire value: Any?) {
     guard let map = value as? [String: Any],
@@ -39,10 +39,10 @@ extension ToastStyleModel {
   init?(wire value: Any?) {
     guard let map = value as? [String: Any] else { return nil }
     self.init(
-      tint: AdaptiveColor(wire: map["tint"]),
-      background: AdaptiveColor(wire: map["background"]),
-      foreground: AdaptiveColor(wire: map["foreground"]),
-      iconColor: AdaptiveColor(wire: map["iconColor"]),
+      tint: ToastColor(wire: map["tint"]),
+      background: ToastColor(wire: map["background"]),
+      foreground: ToastColor(wire: map["foreground"]),
+      iconColor: ToastColor(wire: map["iconColor"]),
       glass: map.enumValue("glass"),
       cornerRadius: map.cgFloat("cornerRadius"),
       symbolEffect: map.enumValue("symbolEffect", default: .none)
@@ -59,7 +59,7 @@ extension ToastActionModel {
       actionId: actionId,
       label: label,
       role: map.enumValue("role", default: .primary),
-      color: AdaptiveColor(wire: map["color"]),
+      color: ToastColor(wire: map["color"]),
       dismissOnPress: map.bool("dismissOnPress", default: true),
       loadingOnPress: map.bool("loadingOnPress", default: false)
     )

@@ -26,11 +26,18 @@ final class PassthroughHostView: UIView {
 /// Installs and owns the overlay. Lives for the app's lifetime as a singleton so
 /// its `ToastManager` survives across individual toasts (and a hot restart is
 /// handled explicitly via `flushAll`).
+///
+/// The overlay is a transparent view added above the app's own content **in the
+/// same window**, so Liquid Glass can sample what is behind it. `LiquidToast`
+/// installs it lazily on first use; call [ensureInstalled] yourself only to
+/// front-load that work (the Flutter plugin does, at registration, so the very
+/// first toast still gets its entrance transition).
 @MainActor
-final class ToastOverlayHost {
-  static let shared = ToastOverlayHost()
+public final class ToastOverlayHost {
+  public static let shared = ToastOverlayHost()
 
-  let manager = ToastManager()
+  /// The one stack this app draws. Low-level: see `ToastManager`.
+  public let manager = ToastManager()
 
   private var hostController: UIHostingController<ToastContainerView>?
   private weak var hostView: PassthroughHostView?
@@ -38,9 +45,10 @@ final class ToastOverlayHost {
 
   private init() {}
 
-  /// Ensures the overlay is attached to the active window. Safe to call before a
-  /// window exists — it retries on the next runloop and on scene activation.
-  func ensureInstalled() {
+  /// Ensures the overlay is attached to the active window. Idempotent, and safe
+  /// to call before a window exists — it retries on the next runloop and on
+  /// scene activation.
+  public func ensureInstalled() {
     addObserversIfNeeded()
     guard hostController == nil else { return }
     guard let window = Self.activeWindow(), let root = window.rootViewController else {
@@ -100,7 +108,9 @@ final class ToastOverlayHost {
     superview.bringSubviewToFront(host)
   }
 
-  static func activeWindow() -> UIWindow? {
+  /// The window the overlay installs into: the foreground-active scene's key
+  /// window, with progressively looser fallbacks.
+  public static func activeWindow() -> UIWindow? {
     let windowScenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
     let scene = windowScenes.first { $0.activationState == .foregroundActive }
       ?? windowScenes.first { $0.activationState == .foregroundInactive }

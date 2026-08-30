@@ -5,6 +5,11 @@ import 'toast_style.dart';
 /// Used by the [Toast] semantic factories, the engine's show-time duration
 /// resolution, and the wire haptic derivation — so each default lives in
 /// exactly one place instead of drifting across factory signatures.
+///
+/// LOCKSTEP: mirrored by `SemanticDefaults` in the native package
+/// (`ios/liquid_toasts/Sources/liquid_toasts/SemanticDefaults.swift`), which the
+/// `LiquidToast` Swift facade uses. The two facades must produce identical
+/// toasts for the same call — change both tables or neither.
 abstract final class SemanticDefaults {
   /// Const handles so factory signatures can reference them as parameter
   /// defaults (default values must be constant expressions).

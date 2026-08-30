@@ -5,15 +5,16 @@
 /// effects) must keep their `#if compiler(>=6.2)` / `if #available(...)`
 /// blocks — the compiler requires syntactic availability there, and the
 /// compiler guard keeps older-Xcode CocoaPods consumers building.
-enum Capabilities {
+public enum Capabilities {
   /// Whether the OS renders native Liquid Glass (iOS 26+).
-  static var hasLiquidGlass: Bool {
+  public static var hasLiquidGlass: Bool {
     #if compiler(>=6.2)
     if #available(iOS 26.0, *) { return true }
     #endif
     return false
   }
 
-  /// The wire string advertised to Dart for the active glass implementation.
-  static var glassModeString: String { hasLiquidGlass ? "liquidGlass" : "frosted" }
+  /// The wire string advertised to Dart for the active glass implementation:
+  /// `"liquidGlass"` or `"frosted"`.
+  public static var glassModeString: String { hasLiquidGlass ? "liquidGlass" : "frosted" }
 }
