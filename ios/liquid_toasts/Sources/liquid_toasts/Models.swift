@@ -1,4 +1,3 @@
-import Flutter
 import SwiftUI
 import UIKit
 
@@ -88,30 +87,15 @@ enum ActionRole: String {
 
 // MARK: - Color
 
-extension Color {
-  /// Builds a color from a 32-bit ARGB int (`0xAARRGGBB`), matching Flutter's
-  /// `Color.toARGB32()`.
-  init(argb: Int) {
-    let a = Double((argb >> 24) & 0xFF) / 255.0
-    let r = Double((argb >> 16) & 0xFF) / 255.0
-    let g = Double((argb >> 8) & 0xFF) / 255.0
-    let b = Double(argb & 0xFF) / 255.0
-    self = Color(.sRGB, red: r, green: g, blue: b, opacity: a)
-  }
-}
-
-/// A `{light, dark}` color pair decoded from the wire, resolved natively against
-/// the current color scheme.
+/// A `{light, dark}` color pair, resolved natively against the current color
+/// scheme.
 struct AdaptiveColor: Equatable {
   let light: Color
   let dark: Color
 
-  init?(_ value: Any?) {
-    guard let map = value as? [String: Any],
-          let l = map.int("light"),
-          let d = map.int("dark") else { return nil }
-    light = Color(argb: l)
-    dark = Color(argb: d)
+  init(light: Color, dark: Color) {
+    self.light = light
+    self.dark = dark
   }
 
   func resolved(_ scheme: ColorScheme) -> Color { scheme == .dark ? dark : light }
@@ -128,15 +112,22 @@ struct ToastStyleModel: Equatable {
   var cornerRadius: CGFloat?
   var symbolEffect: ToastSymbolEffect = .none
 
-  init?(_ value: Any?) {
-    guard let map = value as? [String: Any] else { return nil }
-    tint = AdaptiveColor(map["tint"])
-    background = AdaptiveColor(map["background"])
-    foreground = AdaptiveColor(map["foreground"])
-    iconColor = AdaptiveColor(map["iconColor"])
-    glass = map.enumValue("glass")
-    cornerRadius = map.cgFloat("cornerRadius")
-    symbolEffect = map.enumValue("symbolEffect", default: .none)
+  init(
+    tint: AdaptiveColor? = nil,
+    background: AdaptiveColor? = nil,
+    foreground: AdaptiveColor? = nil,
+    iconColor: AdaptiveColor? = nil,
+    glass: ToastGlassIntent? = nil,
+    cornerRadius: CGFloat? = nil,
+    symbolEffect: ToastSymbolEffect = .none
+  ) {
+    self.tint = tint
+    self.background = background
+    self.foreground = foreground
+    self.iconColor = iconColor
+    self.glass = glass
+    self.cornerRadius = cornerRadius
+    self.symbolEffect = symbolEffect
   }
 }
 
@@ -148,16 +139,20 @@ struct ToastActionModel: Equatable {
   let dismissOnPress: Bool
   let loadingOnPress: Bool
 
-  init?(_ value: Any?) {
-    guard let map = value as? [String: Any],
-          let actionId = map["actionId"] as? String,
-          let label = map["label"] as? String else { return nil }
+  init(
+    actionId: String,
+    label: String,
+    role: ActionRole = .primary,
+    color: AdaptiveColor? = nil,
+    dismissOnPress: Bool = true,
+    loadingOnPress: Bool = false
+  ) {
     self.actionId = actionId
     self.label = label
-    self.role = map.enumValue("role", default: .primary)
-    self.color = AdaptiveColor(map["color"])
-    self.dismissOnPress = map.bool("dismissOnPress", default: true)
-    self.loadingOnPress = map.bool("loadingOnPress", default: false)
+    self.role = role
+    self.color = color
+    self.dismissOnPress = dismissOnPress
+    self.loadingOnPress = loadingOnPress
   }
 }
 
@@ -194,7 +189,7 @@ struct ToastModel: Identifiable, Equatable {
   /// main thread) — nil until then, and stays nil for toasts without one.
   var image: ToastImage?
 
-  /// True when the wire payload carried image bytes. Reserves the avatar slot
+  /// True when the caller supplied image bytes. Reserves the avatar slot
   /// from the first frame so the layout doesn't jump when the decoded pixels
   /// land; the manager clears it if the decode fails (the slot then collapses).
   var expectsImage: Bool
@@ -221,35 +216,64 @@ struct ToastModel: Identifiable, Equatable {
   /// `progress`) so flipping it re-renders only the affected row.
   var isActionBusy = false
 
-  init?(arguments: Any?) {
-    guard let map = arguments as? [String: Any],
-          let id = map["id"] as? String,
-          let message = map["message"] as? String else { return nil }
+  /// Builds a toast. Defaults mirror the wire defaults (see the decoding
+  /// extension in `WireModels.swift`), so a payload that omits a key and a
+  /// caller that omits the argument produce the same toast.
+  ///
+  /// Image pixels are never passed here: the caller hands the raw `Data` to
+  /// `ToastManager.present(_:imageData:)`, which decodes off the main thread
+  /// and attaches the result. Set [expectsImage] so the slot is reserved from
+  /// the first frame.
+  init(
+    id: String,
+    message: String,
+    identity: String? = nil,
+    title: String? = nil,
+    icon: String? = nil,
+    image: ToastImage? = nil,
+    expectsImage: Bool = false,
+    semantic: ToastSemantic = .none,
+    style: ToastStyleModel? = nil,
+    position: ToastPositionModel = .topCenter,
+    state: ToastContentState = .static,
+    persistent: Bool = false,
+    durationMs: Int? = nil,
+    useDynamicIslandOrigin: Bool = true,
+    progress: Double? = nil,
+    progressStyle: ToastProgressStyle = .linear,
+    groupKey: String? = nil,
+    haptic: ToastHapticKind = .none,
+    semanticsLabel: String? = nil,
+    maxLines: Int = 1,
+    titleMaxLines: Int = 1,
+    tapToDismiss: Bool = true,
+    hasTap: Bool = false,
+    action: ToastActionModel? = nil
+  ) {
     self.id = id
-    self.identity = id
+    self.identity = identity ?? id
     self.message = message
-    self.title = map["title"] as? String
-    self.icon = map["icon"] as? String
-    // Image bytes are NOT decoded here — the manager decodes them off the main
-    // thread and attaches the pixels when ready (see ToastImageDecoder).
-    self.expectsImage = map["image"] is FlutterStandardTypedData
-    self.semantic = map.enumValue("semantic", default: .none)
-    self.style = ToastStyleModel(map["style"])
-    self.position = map.enumValue("position", default: .topCenter)
-    self.state = map.enumValue("state", default: .static)
-    self.persistent = map.bool("persistent", default: false)
-    self.durationMs = map.int("durationMs")
-    self.useDynamicIslandOrigin = map.bool("useDynamicIslandOrigin", default: true)
-    self.progress = map.double("progress")
-    self.progressStyle = map.enumValue("progressStyle", default: .linear)
-    self.groupKey = map["groupKey"] as? String
-    self.haptic = map.enumValue("haptic", default: .none)
-    self.semanticsLabel = map["semanticsLabel"] as? String
-    self.maxLines = map.int("maxLines") ?? 1
-    self.titleMaxLines = map.int("titleMaxLines") ?? 1
-    self.tapToDismiss = map.bool("tapToDismiss", default: true)
-    self.hasTap = map.bool("hasTap", default: false)
-    self.action = ToastActionModel(map["action"])
+    self.title = title
+    self.icon = icon
+    self.image = image
+    self.expectsImage = expectsImage
+    self.semantic = semantic
+    self.style = style
+    self.position = position
+    self.state = state
+    self.persistent = persistent
+    self.durationMs = durationMs
+    self.useDynamicIslandOrigin = useDynamicIslandOrigin
+    self.progress = progress
+    self.progressStyle = progressStyle
+    self.groupKey = groupKey
+    self.haptic = haptic
+    self.semanticsLabel = semanticsLabel
+    self.maxLines = maxLines
+    self.titleMaxLines = titleMaxLines
+    self.tapToDismiss = tapToDismiss
+    self.hasTap = hasTap
+    self.action = action
   }
 
   /// Applies a fresh decode's content onto this toast, preserving identity so

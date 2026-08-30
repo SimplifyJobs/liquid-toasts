@@ -1,9 +1,12 @@
 import CoreGraphics
 import Foundation
 
-/// Decoding helpers for method-channel payloads. `StandardMessageCodec`
+/// Primitive decoding helpers for method-channel payloads. `StandardMessageCodec`
 /// bridges Dart ints/doubles/bools as `NSNumber`, so plain `as?` casts on the
 /// primitive types are unreliable — always go through these.
+///
+/// Bridge-side only (the models in `Models.swift` are Flutter-free); the model
+/// decoders that build on these live in `WireModels.swift`.
 extension Dictionary where Key == String, Value == Any {
   func int(_ key: String) -> Int? {
     if let n = self[key] as? NSNumber { return n.intValue }
