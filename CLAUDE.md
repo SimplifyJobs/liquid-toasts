@@ -43,7 +43,7 @@ cd example && flutter run -t lib/showcase.dart   # run the README recording harn
 
 Native Swift code is built by the Flutter/Xcode toolchain when you run the
 example; there is no standalone `swift build` (the package is iOS-only — use
-`xcodebuild -scheme LiquidToasts -destination 'generic/platform=iOS Simulator'`
+`xcodebuild -scheme liquid-toasts -destination 'generic/platform=iOS Simulator'`
 against the root package if you want to compile the core alone).
 
 ### SwiftPM-only

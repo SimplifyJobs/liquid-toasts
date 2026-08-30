@@ -208,7 +208,7 @@ All moves via `git mv` (history follows):
 - `flutter analyze` + `flutter test` from `liquid_toasts/`.
 - Example app builds and runs in SwiftPM mode
   (`flutter config --enable-swift-package-manager`).
-- `xcodebuild build -scheme LiquidToasts -destination 'generic/platform=iOS Simulator'`
+- `xcodebuild build -scheme liquid-toasts -destination 'generic/platform=iOS Simulator'`
   against the root package (plain `swift build` can't target iOS).
 - Scratch native app: add the GitHub URL at the branch ref, show a toast.
 - Scratch Flutter app: pub git dependency (`path: liquid_toasts`), show a toast.
