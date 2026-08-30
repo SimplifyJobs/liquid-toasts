@@ -4,22 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`liquid_toasts` is a Flutter **plugin** that renders premium, natively-drawn
-toasts on an overlay above the Flutter app — springy entrance, per-position
-vertical stacking, async loading toasts — with **no `BuildContext` required**
-(the whole Dart API is static). Both platforms are implemented and behave
-identically: iOS renders in SwiftUI with adaptive Liquid Glass; Android renders
-in Jetpack Compose with an opaque adaptive surface (no blur/glass). The Dart
-API and wire protocol are platform-neutral.
+A **monorepo shipping two packages** built from one SwiftUI implementation:
+
+- **`LiquidToasts`** — a standalone SwiftUI package for native iOS apps.
+  Sources at `liquid-toasts-swift/Sources/LiquidToasts/`; its manifest is the
+  **repo-root `Package.swift`** (SwiftPM only resolves a git URL whose repo
+  root holds a manifest, so the root one is thin and points at that folder via
+  `path:`). Native entry point: `LiquidToast.show(…)`.
+- **`liquid_toasts`** (`liquid_toasts/`) — the Flutter **plugin**: a
+  context-free Dart API (`toast.success('hi')`) over a native overlay. On iOS
+  it is a *bridge only* — channels and wire decoding — and gets every pixel
+  from the `LiquidToasts` package above, referenced by relative path
+  (`../../..`). Android is implemented inside the plugin in Jetpack Compose.
+
+Both render premium, natively-drawn toasts on an overlay above the app —
+springy entrance, per-position vertical stacking, async loading toasts — with
+**no `BuildContext` / view controller required**. iOS uses adaptive Liquid
+Glass; Android an opaque adaptive surface (no blur/glass). The Dart API and
+wire protocol are platform-neutral, and both facades share one native stack.
+
+`docs/monorepo-plan.md` records why the repo is shaped this way.
 
 ## Commands
 
-Run Dart commands from the repo root; run the app from `example/`.
+Run Dart commands from `liquid_toasts/`; run the app from
+`liquid_toasts/example/`.
 
 ```bash
+cd liquid_toasts
 flutter analyze                         # lint (flutter_lints, see analysis_options.yaml)
 flutter test                            # all Dart unit tests
-flutter test test/liquid_toasts_test.dart                    # one file
+flutter test test/toaster_test.dart                          # one file
 flutter test --plain-name 'show serializes the toast'        # one test by name
 
 cd example && flutter run               # run the demo app (needs an iOS device/sim)
@@ -27,26 +42,41 @@ cd example && flutter run -t lib/showcase.dart   # run the README recording harn
 ```
 
 Native Swift code is built by the Flutter/Xcode toolchain when you run the
-example; there is no standalone Swift build step. The iOS sources live as a
-local Swift package under `ios/liquid_toasts/`.
+example; there is no standalone `swift build` (the package is iOS-only — use
+`xcodebuild -scheme LiquidToasts -destination 'generic/platform=iOS Simulator'`
+against the root package if you want to compile the core alone).
 
-### Example app caveat
+### SwiftPM-only
 
-The bundled `example/` depends on the plugin via a **path** dependency. Flutter's
-Swift Package Manager integration derives the package identity from the project
-**folder name**, so the local checkout folder must be `liquid_toasts` (matching
-the Dart package name), **not** `liquid-toasts`. The GitHub repo is named
-`liquid-toasts`; rename the folder if you re-clone. Consumers installing from
-pub.dev are unaffected. CocoaPods is also supported (`ios/liquid_toasts.podspec`).
+There is no podspec. The example — and every consumer — must run with Flutter's
+SwiftPM mode enabled:
+
+```bash
+flutter config --enable-swift-package-manager
+```
+
+A CocoaPods-mode build fails with a missing-podspec error. The example depends
+on the plugin via `path: ../`, and the plugin's bridge package resolves the
+core through the repo-root manifest, so a plain checkout builds with no extra
+setup.
 
 ## Architecture
+
+```
+Package.swift                          # root manifest for the core package
+liquid-toasts-swift/Sources/LiquidToasts/   # the SwiftUI core (Flutter-free)
+liquid_toasts/                         # the Flutter plugin
+  lib/  test/  android/  example/
+  ios/liquid_toasts/                   # bridge-only Swift package
+tool/  docs/  assets/                  # repo-level
+```
 
 The plugin is a **two-layer bridge**: a context-free Dart engine that owns
 caller-facing state, and a SwiftUI overlay on iOS that owns all rendering and
 the actual toast stack. They communicate over a method channel (Dart→native
 commands) and an event channel (native→Dart lifecycle events).
 
-### Dart side (`lib/`)
+### Dart side (`liquid_toasts/lib/`)
 
 - `ToastEngine` (`lib/src/toast_engine.dart`, internal singleton) — owns ALL
   state: the registry mapping toast id → `ToastRegistration` (dismissal
@@ -85,16 +115,24 @@ commands) and an event channel (native→Dart lifecycle events).
   `toast_event.dart` (inbound events + `ToastDismissReason`), `toast_style.dart`,
   `toast_position.dart`, `liquid_toasts_config.dart`, `ids.dart` (id minting).
 
-### iOS side (`ios/liquid_toasts/Sources/liquid_toasts/`)
+### iOS side — two SwiftPM modules
 
-Two layers, split by access control (and, from Phase 3 on, by SwiftPM module):
-the **core** — everything except the three bridge files — is Flutter-free and
-carries the `public` API; the **bridge** (`LiquidToastsPlugin.swift`,
-`WireModels.swift`, `WireDecoding.swift`) is the only Flutter-aware code and
-must use nothing but core `public` API. Native apps get `LiquidToast`, a static
-facade mirroring the Dart `toast` API; `ToastManager` under it is public too but
-documented as low-level. Everything else stays `internal` — see
-`docs/monorepo-plan.md`.
+| | Path | Contents |
+|---|---|---|
+| **core** (`LiquidToasts`) | `liquid-toasts-swift/Sources/LiquidToasts/` | the renderer, the stack, the scheduler and the `LiquidToast` facade — everything except the three bridge files; **no `import Flutter` anywhere** |
+| **bridge** (`liquid_toasts`) | `liquid_toasts/ios/liquid_toasts/Sources/liquid_toasts/` | `LiquidToastsPlugin.swift`, `WireModels.swift`, `WireDecoding.swift` — the ONLY Flutter-aware code, and the ONLY place the wire format lives |
+
+The bridge files `import LiquidToasts` and may use nothing but the core's
+`public` API — if a bridge change needs a new symbol, widen access in the core
+deliberately rather than reaching in. (`WireDecoding.swift` needs no import: it
+is pure `Dictionary` helpers.) Native apps get `LiquidToast`, a static facade
+mirroring the Dart `toast` API; `ToastManager` under it is public too but
+documented as low-level. Everything else stays `internal`.
+
+Each target ships its own `PrivacyInfo.xcprivacy` (both declare no collection
+and no required-reason APIs) as a `.process` resource.
+
+**Bridge:**
 
 - `LiquidToastsPlugin.swift` — the `FlutterPlugin`/`FlutterStreamHandler`. Decodes
   channel args into `ToastModel`s and drives the manager. Flutter calls channel
@@ -102,6 +140,14 @@ documented as low-level. Everything else stays `internal` — see
   UI directly with no actor hop. Owns the **only** mapping from the typed
   `ToastEventPayload` back to the wire dictionaries (`wireEvent`), and
   deliberately drops `.flushed` — a flush is silent by contract.
+- `WireModels.swift` — the `init?(wire:)`/`init?(arguments:)` decoders that turn
+  channel payloads into the core models (cross-module extensions on `public`
+  types, so they need `import LiquidToasts`). The one `FlutterStandardTypedData`
+  check lives here.
+- `WireDecoding.swift` — `[String: Any]` decode helpers (NSNumber-aware).
+
+**Core:**
+
 - `LiquidToast.swift` — the native facade: `show/success/error/warning/info/
   loading`, `promise`, `configure`, `dismiss(All)`. Thin wrappers over one
   private `present(...)` funnel, mirroring `Toaster._semanticShow`.
@@ -114,9 +160,10 @@ documented as low-level. Everything else stays `internal` — see
   `LiquidToastConfiguration.swift` — the facade's value types (patch-style
   `update`, `onDismissed`/`dismissal`, the action + its callback, app-wide
   defaults and the `ToastDuration` "omitted" sentinel).
-- `SemanticDefaults.swift` — **LOCKSTEP with `lib/src/semantic_defaults.dart`**:
-  the per-semantic duration / line cap / appear-haptic table the native facade
-  uses. Both files carry the cross-reference; change both or neither.
+- `SemanticDefaults.swift` — **LOCKSTEP with
+  `liquid_toasts/lib/src/semantic_defaults.dart`**: the per-semantic duration /
+  line cap / appear-haptic table the native facade uses. Both files carry the
+  cross-reference; change both or neither.
 - `ToastEvents.swift` — `ToastDismissReason` (raw values = wire strings),
   the typed `ToastEventPayload` and the listener token.
 - `ToastOverlayHost.swift` — singleton that installs a transparent
@@ -165,11 +212,8 @@ documented as low-level. Everything else stays `internal` — see
 - `Models.swift` — `ToastModel` and friends (all `Equatable` and `public` with
   memberwise inits; the image compares by identity via `ToastImage`); mirrors
   the Dart wire format. Runtime-only fields (`identity`, `shakeToken`,
-  `isActionBusy`) are `public internal(set)`.
-- `WireModels.swift` — **bridge**: the `init?(wire:)`/`init?(arguments:)`
-  decoders that turn channel payloads into those models.
-- `WireDecoding.swift` — **bridge**: `[String: Any]` decode helpers
-  (NSNumber-aware).
+  `isActionBusy`) are `public internal(set)` — so the bridge reads them but
+  only the core mutates them.
 - `DynamicIslandGeometry.swift` — device geometry snapshot for `queryGeometry`.
 - `Haptics.swift` — maps the toast's haptic enum to `UINotificationFeedbackGenerator`.
 
@@ -204,8 +248,9 @@ misuse throws `ArgumentError` at the call site.
 
 ## Testing notes
 
-- Dart tests use the shared `FakeLiquidToastsPlatform` (`test/fake_platform.dart`)
-  installed via `LiquidToastsPlatform.instance`, with manual control over the
+- Dart tests use the shared `FakeLiquidToastsPlatform`
+  (`liquid_toasts/test/fake_platform.dart`) installed via
+  `LiquidToastsPlatform.instance`, with manual control over the
   event stream, which ids native considers "live", an ordered `callLog`, and a
   `showGate` completer to simulate slow native acks (for in-flight-race tests).
 - `toast.debugReset()` resets all engine state between tests;
@@ -213,12 +258,12 @@ misuse throws `ArgumentError` at the call site.
   `@visibleForTesting` — use them rather than reaching into private state.
   `ToastEngine.instance.settle(id)` (import `src/toast_engine.dart`) awaits a
   toast's queued platform ops — use it instead of pumping arbitrary delays.
-- `test/toaster_test.dart` covers the new API; `test/legacy_facade_test.dart`
-  is per-member smoke coverage of the deprecated facade (keep it green until
-  the 1.0 removal).
+- `liquid_toasts/test/toaster_test.dart` covers the new API;
+  `liquid_toasts/test/legacy_facade_test.dart` is per-member smoke coverage of
+  the deprecated facade (keep it green until the 1.0 removal).
 - Native behaviors that unit tests can't reach have scripted simulator probes
-  in `example/lib/`: `bg_probe_demo.dart` (wall-clock deadlines across
-  backgrounding + hot-restart flush; drive it with `simctl` foreground/
+  in `liquid_toasts/example/lib/`: `bg_probe_demo.dart` (wall-clock deadlines
+  across backgrounding + hot-restart flush; drive it with `simctl` foreground/
   background cycles and read the `BGPROBE:` markers) and
   `render_probe_demo.dart` (render isolation; add a temporary NSLog to
   `ToastView.body` and count bodies per patch — expect ~1, not one per
@@ -226,24 +271,27 @@ misuse throws `ArgumentError` at the call site.
 
 ## Demo / showcase videos
 
-`example/lib/showcase.dart` is the recording harness for the README's
-`assets/showcase/*.mp4` clips (full-bleed wallpaper so glass has something to
-refract, clean gaps between previews). The exact ffmpeg/simctl regeneration
-recipe is documented in that file's header comment.
+`liquid_toasts/example/lib/showcase.dart` is the recording harness for the
+README's showcase clips, which live at the repo root in `assets/showcase/*.mp4`
+(full-bleed wallpaper so glass has something to refract, clean gaps between
+previews). The exact ffmpeg/simctl regeneration recipe is documented in that
+file's header comment.
 
 For ad-hoc demo videos (e.g. showing off a styling change), use the automated
 recorder instead of doing it by hand:
 
 ```bash
+# from the repo root; --target is relative to liquid_toasts/example/
 tool/record_demo.sh --target lib/multiline_demo.dart --prefix MULTILINE --contact
 ```
 
 It launches the example on a booted iOS sim, records a clean hot-restart replay,
 and encodes a high-quality **60 fps** mp4 cropped to the toast zone (lead-in
 auto-trimmed; `--contact` writes a verification grid). Write new reels with
-`runDemoReel()` in `example/lib/demo_harness.dart` — a `name → preview` map that
-emits the `<prefix>:…:START/END` + `<prefix>:DONE` markers the recorder keys off
-(`example/lib/multiline_demo.dart` is the worked example). The `record-demo`
-skill documents the full workflow. Note: the sim's display link caps capture at
-60 fps; true 120 fps needs a physical ProMotion device. Toasts animate natively
+`runDemoReel()` in `liquid_toasts/example/lib/demo_harness.dart` — a
+`name → preview` map that emits the `<prefix>:…:START/END` + `<prefix>:DONE`
+markers the recorder keys off (`liquid_toasts/example/lib/multiline_demo.dart`
+is the worked example). The `record-demo` skill documents the full workflow.
+Note: the sim's display link caps capture at 60 fps; true 120 fps needs a
+physical ProMotion device. Toasts animate natively
 in SwiftUI, so capture smoothness is independent of Flutter debug/profile mode.

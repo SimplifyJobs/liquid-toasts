@@ -7,8 +7,8 @@ import 'toast_style.dart';
 /// exactly one place instead of drifting across factory signatures.
 ///
 /// LOCKSTEP: mirrored by `SemanticDefaults` in the native package
-/// (`ios/liquid_toasts/Sources/liquid_toasts/SemanticDefaults.swift`), which the
-/// `LiquidToast` Swift facade uses. The two facades must produce identical
+/// (`liquid-toasts-swift/Sources/LiquidToasts/SemanticDefaults.swift`), which
+/// the `LiquidToast` Swift facade uses. The two facades must produce identical
 /// toasts for the same call — change both tables or neither.
 abstract final class SemanticDefaults {
   /// Const handles so factory signatures can reference them as parameter

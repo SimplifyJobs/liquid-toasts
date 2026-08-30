@@ -40,7 +40,8 @@ liquid-toasts/
 ├── Package.swift                  # ROOT manifest — the standalone SwiftUI package
 ├── liquid-toasts-swift/
 │   ├── Sources/LiquidToasts/      # core: manager, views, scheduler, metrics, models…
-│   ├── Tests/LiquidToastsTests/
+│   ├── README.md                  # native quick start
+│   ├── Tests/LiquidToastsTests/   # (later)
 │   └── Example/                   # (later) tiny native demo app
 ├── liquid_toasts/                 # the Flutter plugin package
 │   ├── pubspec.yaml
@@ -52,7 +53,9 @@ liquid-toasts/
 │           └── Sources/liquid_toasts/  # LiquidToastsPlugin.swift, WireDecoding.swift, PrivacyInfo
 ├── tool/                          # record_demo.sh
 ├── docs/
-├── README.md  LICENSE  CHANGELOG.md (repo-level)
+├── README.md (umbrella)  LICENSE
+│   # no repo-level CHANGELOG: the single CHANGELOG lives with the plugin,
+│   # since both packages ship from one version/tag
 └── .github/workflows/
 ```
 

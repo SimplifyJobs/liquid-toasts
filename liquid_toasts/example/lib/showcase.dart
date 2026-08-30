@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:liquid_toasts/liquid_toasts.dart';
 
-/// Recording harness for the README showcase clips (`assets/showcase/*.mp4`).
+/// Recording harness for the README showcase clips, which live at the repo
+/// root in `assets/showcase/*.mp4`.
 ///
 /// It paints a full-bleed iOS wallpaper — so the Liquid Glass toasts have
 /// something to refract — under a white status bar with no other chrome, then
 /// plays each preview once, separated by clean wallpaper-only gaps so a single
 /// screen recording can be sliced into one clip per preview.
 ///
-/// Regenerate the clips:
+/// Regenerate the clips (from `liquid_toasts/example/`):
 ///   1. flutter run -t lib/showcase.dart                  # on an iOS 26+ sim
 ///   2. xcrun simctl io booted recordVideo demo.mov       # ⌃C when it ends
 ///   3. ffmpeg -i demo.mov -vf fps=30 cfr.mp4             # VFR → constant fps

@@ -25,12 +25,15 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 # Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
-/pubspec.lock
+/liquid_toasts/pubspec.lock
 **/doc/api/
 .dart_tool/
 .flutter-plugins-dependencies
-/build/
-/coverage/
+build/
+coverage/
+
+# SwiftPM (root core package + the plugin's bridge package)
+Package.resolved
 
 # Claude Code tooling
 .agents/

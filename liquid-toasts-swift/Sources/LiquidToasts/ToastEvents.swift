@@ -6,7 +6,7 @@ import Foundation
 /// [ToastDismissReason]'s raw values are **wire strings** shared verbatim with
 /// the Flutter bridge and Dart's `ToastDismissReason` — see the wire-protocol
 /// invariants in CLAUDE.md. Change them only in lockstep with
-/// `lib/src/toast_event.dart`.
+/// `liquid_toasts/lib/src/toast_event.dart`.
 
 // MARK: - Dismiss reason
 

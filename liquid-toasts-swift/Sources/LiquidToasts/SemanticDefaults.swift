@@ -4,10 +4,11 @@ import Foundation
 /// side: the duration, message line cap and appear-haptic a toast gets when the
 /// caller doesn't set one.
 ///
-/// **LOCKSTEP: mirrors `lib/src/semantic_defaults.dart` exactly.** The Flutter
-/// facade and `LiquidToast` must produce identical toasts for the same call, so
-/// every value here has a twin there — change both or neither. (The Dart file
-/// carries the matching cross-reference comment.)
+/// **LOCKSTEP: mirrors `liquid_toasts/lib/src/semantic_defaults.dart`
+/// exactly.** The Flutter facade and `LiquidToast` must produce identical
+/// toasts for the same call, so every value here has a twin there — change
+/// both or neither. (The Dart file carries the matching cross-reference
+/// comment.)
 enum SemanticDefaults {
   static let successDuration: TimeInterval = 3
   static let errorDuration: TimeInterval = 4

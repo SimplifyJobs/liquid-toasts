@@ -4,7 +4,8 @@
 /// that USE availability-gated APIs (`glassEffect`, `.drawOn`, iOS 18 symbol
 /// effects) must keep their `#if compiler(>=6.2)` / `if #available(...)`
 /// blocks — the compiler requires syntactic availability there, and the
-/// compiler guard keeps older-Xcode CocoaPods consumers building.
+/// `#if compiler(...)` guard keeps the package building on older Xcode
+/// toolchains that don't know the newer SDKs at all.
 public enum Capabilities {
   /// Whether the OS renders native Liquid Glass (iOS 26+).
   public static var hasLiquidGlass: Bool {

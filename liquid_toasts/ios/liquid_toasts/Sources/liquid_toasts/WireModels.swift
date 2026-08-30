@@ -1,13 +1,15 @@
 import Flutter
+import LiquidToasts
 import SwiftUI
 
 /// Wire decoding for the toast models: the `[String: Any]` method-channel
-/// payloads Dart sends, turned into the Flutter-free models in `Models.swift`
-/// via their plain initializers.
+/// payloads Dart sends, turned into the Flutter-free models of the
+/// `LiquidToasts` core package via their public initializers.
 ///
-/// This file is **bridge** code (it may import Flutter); the models themselves
-/// know nothing about the wire format. Keys and defaults must stay in lockstep
-/// with `lib/src/toast.dart` — see the wire-protocol invariants in CLAUDE.md.
+/// This file is **bridge** code (it may import Flutter); the core models
+/// themselves know nothing about the wire format. Keys and defaults must stay
+/// in lockstep with `liquid_toasts/lib/src/toast.dart` — see the wire-protocol
+/// invariants in CLAUDE.md.
 
 // MARK: - Color
 

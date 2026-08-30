@@ -1,10 +1,14 @@
 import Flutter
+import LiquidToasts
 import UIKit
 
 /// Thin bridge between Flutter and the native overlay. Decodes method-channel
 /// arguments into [ToastModel]s, drives [ToastManager], and streams lifecycle
 /// events back over the event channel. Flutter invokes channel handlers on the
 /// main thread, so UI is touched directly (no actor hop).
+///
+/// Everything it renders with comes from the `LiquidToasts` core package; this
+/// target adds only the channel plumbing and the wire format.
 public class LiquidToastsPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
   private var eventSink: FlutterEventSink?
 
@@ -144,7 +148,7 @@ public class LiquidToastsPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
   /// `ToastEvent.fromMap` expects, or nil for an event that deliberately does
   /// not cross the wire. Keys and strings are **wire protocol** — see the
   /// invariants in CLAUDE.md; keep them in lockstep with
-  /// `lib/src/toast_event.dart`.
+  /// `liquid_toasts/lib/src/toast_event.dart`.
   private static func wireEvent(_ payload: ToastEventPayload) -> [String: Any]? {
     var map: [String: Any] = ["id": payload.id, "tsMs": payload.timestampMs]
     switch payload.kind {

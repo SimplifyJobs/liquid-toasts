@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
  * XML asset dependency).
  *
  * Resolution chain — mirrors iOS `IconView.validatedSymbol`
- * (ios/liquid_toasts/Sources/liquid_toasts/IconView.swift):
+ * (liquid-toasts-swift/Sources/LiquidToasts/IconView.swift):
  *   1. explicit icon name -> its mapped vector (if we have one);
  *   2. an unmapped name    -> the toast's semantic default symbol (via
  *      [semanticDefault]);
