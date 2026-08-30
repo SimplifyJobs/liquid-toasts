@@ -24,7 +24,7 @@ add the **LiquidToasts** library to your target.
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/SimplifyJobs/liquid-toasts.git", from: "0.7.0")
+  .package(url: "https://github.com/SimplifyJobs/liquid-toasts.git", from: "0.8.0")
 ],
 targets: [
   .target(name: "App", dependencies: [

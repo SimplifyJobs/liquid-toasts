@@ -52,7 +52,7 @@ the **LiquidToasts** library to your app target.
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/SimplifyJobs/liquid-toasts.git", from: "0.7.0")
+  .package(url: "https://github.com/SimplifyJobs/liquid-toasts.git", from: "0.8.0")
 ],
 targets: [
   .target(name: "App", dependencies: [
@@ -76,7 +76,7 @@ dependencies:
   liquid_toasts:
     git:
       url: https://github.com/SimplifyJobs/liquid-toasts.git
-      ref: v0.7.0
+      ref: v0.8.0
       path: liquid_toasts
 ```
 
@@ -97,6 +97,12 @@ import 'package:liquid_toasts/liquid_toasts.dart';
 
 toast.success('Saved to favorites');
 ```
+
+## Releases
+
+Both packages ship from one `vX.Y.Z` git tag — notes live on the
+[Releases page](https://github.com/SimplifyJobs/liquid-toasts/releases), and
+SwiftPM and pub resolve straight from the tag.
 
 ## Layout
 

@@ -1,3 +1,44 @@
+## 0.8.0
+
+**Monorepo restructure.** The SwiftUI renderer is now a standalone Swift package
+that native iOS apps can install straight from GitHub, and the Flutter plugin
+lives beside it in the same repo, consuming it by relative path. **The Dart API
+and the wire protocol are unchanged** — no call site needs editing; everything
+below is about how the package is shipped and installed.
+
+* **Standalone `LiquidToasts` Swift package** — the iOS renderer ships on its
+  own, installable in any iOS app from
+  `https://github.com/SimplifyJobs/liquid-toasts.git` (Xcode's package picker or
+  `from: "0.8.0"`), with a new native **`LiquidToast`** facade that mirrors the
+  Dart API (`LiquidToast.success("Saved")`, live handles, `promise`, app-wide
+  config) — see
+  [the native README](https://github.com/SimplifyJobs/liquid-toasts/blob/main/liquid-toasts-swift/README.md).
+  Both packages ship from the same `vX.Y.Z` tag, and the plugin's iOS side is a
+  bridge (channels + wire decoding) over that package, so the renderer exists
+  exactly once with no vendored copy to drift.
+* **BREAKING — CocoaPods support dropped.** There is no podspec any more; the
+  iOS side is Swift Package Manager only. Enable Flutter's SwiftPM mode once per
+  machine, or an iOS build fails with a missing-podspec error:
+
+  ```bash
+  flutter config --enable-swift-package-manager
+  ```
+* **BREAKING — install is now a pubspec git dependency** with a `path`, since
+  the plugin lives in a subdirectory of the monorepo:
+
+  ```yaml
+  dependencies:
+    liquid_toasts:
+      git:
+        url: https://github.com/SimplifyJobs/liquid-toasts.git
+        ref: v0.8.0
+        path: liquid_toasts
+  ```
+* **The checkout-folder rename caveat is gone** — the plugin folder inside the
+  repo is already named `liquid_toasts`, so Flutter's SwiftPM integration
+  derives the right package identity in every install mode (git, path, or a
+  local clone of the `liquid-toasts` repo). Nothing to rename after cloning.
+
 ## 0.7.0
 
 * **Global line limits** — `LiquidToastsConfig.maxLines` and

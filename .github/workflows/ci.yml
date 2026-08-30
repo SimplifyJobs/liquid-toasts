@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Called by release.yml on a tag push, so a release runs the exact same checks.
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dart:
+    name: Dart analyze + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: liquid_toasts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+  swift:
+    name: Swift core (iOS Simulator build)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      # The root Package.swift is the standalone LiquidToasts package. It is
+      # iOS-only, so `swift build` (which targets macOS) cannot compile it —
+      # xcodebuild with a simulator destination can. iOS-26 APIs are gated
+      # behind `#if compiler(>=6.2)`, so older Xcodes build fine.
+      - name: Build LiquidToasts
+        run: |
+          xcodebuild build \
+            -scheme LiquidToasts \
+            -destination 'generic/platform=iOS Simulator' \
+            -skipPackagePluginValidation
+
+  example:
+    name: Example app (iOS build)
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: liquid_toasts/example
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # Required: the plugin is SwiftPM-only (no podspec), so a CocoaPods-mode
+      # build hard-fails with a missing-podspec error.
+      - name: Enable Swift Package Manager
+        run: flutter config --enable-swift-package-manager
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS
+        run: flutter build ios --no-codesign --debug
+
+  android:
+    name: Android build + unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # Builds the plugin's Kotlin/Compose sources through the example, and
+      # generates the Gradle wrapper + local.properties the unit-test run below
+      # needs (both are gitignored).
+      - name: Build example APK
+        working-directory: liquid_toasts/example
+        run: flutter build apk --debug
+
+      # The plugin is included in the example's Gradle build as `:liquid_toasts`
+      # by Flutter's plugin loader; its JVM tests live in
+      # liquid_toasts/android/src/test/.
+      - name: Plugin unit tests
+        working-directory: liquid_toasts/example/android
+        run: ./gradlew :liquid_toasts:testDebugUnitTest

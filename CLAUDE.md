@@ -60,6 +60,28 @@ on the plugin via `path: ../`, and the plugin's bridge package resolves the
 core through the repo-root manifest, so a plain checkout builds with no extra
 setup.
 
+## CI / releases
+
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main`:
+
+| Job | Runner | What |
+| --- | --- | --- |
+| `dart` | ubuntu | `flutter analyze` + `flutter test` in `liquid_toasts/` |
+| `swift` | macOS | `xcodebuild build -scheme LiquidToasts -destination 'generic/platform=iOS Simulator'` against the root package |
+| `example` | macOS | `flutter build ios --no-codesign --debug`, after `flutter config --enable-swift-package-manager` (CocoaPods mode hard-fails) |
+| `android` | ubuntu | `flutter build apk --debug`, then `./gradlew :liquid_toasts:testDebugUnitTest` from `liquid_toasts/example/android` — the APK build is what generates the Gradle wrapper and `local.properties` those tests need |
+
+`.github/workflows/release.yml` fires on a `v*` tag: it reuses ci.yml wholesale
+(via `workflow_call`), then creates the GitHub Release.
+
+**To release:** add the section to `liquid_toasts/CHANGELOG.md`, bump `version:`
+in `liquid_toasts/pubspec.yaml` to match, update the install snippets in the
+three READMEs, and push a `vX.Y.Z` tag. The workflow fails loudly before
+publishing anything if the tag and the pubspec version disagree; the release
+body is that CHANGELOG section (headers carry no `v`) plus an install block
+pinned to the tag. Both packages ship from that one tag and SwiftPM and pub both
+resolve straight from it, so nothing is attached to the release.
+
 ## Architecture
 
 ```
