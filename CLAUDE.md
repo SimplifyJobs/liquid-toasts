@@ -67,7 +67,7 @@ setup.
 | Job | Runner | What |
 | --- | --- | --- |
 | `dart` | ubuntu | `flutter analyze` + `flutter test` in `liquid_toasts/` |
-| `swift` | macOS | `xcodebuild build -scheme LiquidToasts -destination 'generic/platform=iOS Simulator'` against the root package |
+| `swift` | macOS | `xcodebuild build -scheme liquid-toasts -destination 'generic/platform=iOS Simulator'` against the root package (the auto-generated scheme is named after the package, not the product) |
 | `example` | macOS | `flutter build ios --no-codesign --debug`, after `flutter config --enable-swift-package-manager` (CocoaPods mode hard-fails) |
 | `android` | ubuntu | `flutter build apk --debug`, then `./gradlew :liquid_toasts:testDebugUnitTest` from `liquid_toasts/example/android` — the APK build is what generates the Gradle wrapper and `local.properties` those tests need |
 

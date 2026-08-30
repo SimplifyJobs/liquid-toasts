@@ -47,14 +47,20 @@ jobs:
       - name: Xcode version
         run: xcodebuild -version
 
+      # Kept for diagnosis: if the auto-generated scheme name ever changes,
+      # this shows what xcodebuild actually offers.
+      - name: List schemes
+        run: xcodebuild -list
+
       # The root Package.swift is the standalone LiquidToasts package. It is
       # iOS-only, so `swift build` (which targets macOS) cannot compile it —
-      # xcodebuild with a simulator destination can. iOS-26 APIs are gated
-      # behind `#if compiler(>=6.2)`, so older Xcodes build fine.
+      # xcodebuild with a simulator destination can. The auto-generated scheme
+      # is named after the PACKAGE (`liquid-toasts`), not the product. iOS-26
+      # APIs are gated behind `#if compiler(>=6.2)`, so older Xcodes build fine.
       - name: Build LiquidToasts
         run: |
           xcodebuild build \
-            -scheme LiquidToasts \
+            -scheme liquid-toasts \
             -destination 'generic/platform=iOS Simulator' \
             -skipPackagePluginValidation
 

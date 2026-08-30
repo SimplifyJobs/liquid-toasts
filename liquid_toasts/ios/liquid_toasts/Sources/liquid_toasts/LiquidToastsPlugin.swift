@@ -14,8 +14,10 @@ public class LiquidToastsPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 
   /// This instance's subscription to the shared stack. Registered once (the
   /// manager fans out to every listener, so re-registering per call would stack
-  /// duplicates) and kept for the plugin's lifetime; the listener holds only a
-  /// weak reference back, and a nil sink simply drops the event.
+  /// duplicates) and released when the engine detaches — the manager is an
+  /// app-lifetime singleton, so an orphaned entry would outlive this instance.
+  /// The listener holds only a weak reference back, and a nil sink simply
+  /// drops the event.
   private var eventToken: ToastEventToken?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
@@ -35,6 +37,16 @@ public class LiquidToastsPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     MainActor.assumeIsolated {
       route(call, result: result)
+    }
+  }
+
+  public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
+    MainActor.assumeIsolated {
+      if let token = eventToken {
+        ToastOverlayHost.shared.manager.removeEventListener(token)
+        eventToken = nil
+      }
+      eventSink = nil
     }
   }
 

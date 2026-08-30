@@ -13,8 +13,9 @@ import Foundation
 ///
 /// [ToastDuration.default] is the *omitted* case — it resolves to
 /// `LiquidToastConfiguration.defaultDuration`, or the per-semantic default
-/// (`SemanticDefaults`) when that is unset. A non-positive interval is treated
-/// as [persistent], matching Dart's `Duration.zero`.
+/// (`SemanticDefaults`) when that is unset. A non-positive, non-finite, or
+/// absurdly large interval is treated as [persistent] (a toast that never
+/// auto-dismisses), matching Dart's `Duration.zero`.
 public enum ToastDuration: Equatable, Sendable {
   /// The configured / per-semantic default.
   case `default`
@@ -38,7 +39,12 @@ public enum ToastDuration: Equatable, Sendable {
     case .default: seconds = configured ?? SemanticDefaults.duration(for: semantic)
     case .seconds(let value): seconds = value
     }
-    return seconds > 0 ? Int(seconds * 1000) : nil
+    // Non-positive, NaN, and infinity all mean "no deadline". The upper guard
+    // also keeps `Int(_)` from trapping on values it cannot represent.
+    guard seconds.isFinite, seconds > 0 else { return nil }
+    let milliseconds = seconds * 1000
+    guard milliseconds < TimeInterval(Int.max) else { return nil }
+    return Int(milliseconds)
   }
 }
 

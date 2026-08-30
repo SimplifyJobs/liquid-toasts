@@ -245,9 +245,14 @@ final class LiquidToastCenter {
   /// as Dart's `dismissAll` clears native ones) and completes every native
   /// handle.
   func dismissAll(reason: ToastDismissReason = .dismissAll) {
+    // Snapshot before the sweep: an `onDismissed` callback may show a NEW toast
+    // mid-sweep, and that one is live (the manager snapshots its ids the same
+    // way) — completing it here would strand a visible toast with a dead handle.
+    let owned = Array(registry.keys)
     manager.dismissAll(reason: reason)
-    // Safety net: anything the stack no longer knew about completes locally.
-    for id in Array(registry.keys) {
+    // Safety net, scoped to the snapshot: anything the stack no longer knew
+    // about completes locally.
+    for id in owned {
       complete(id: id, reason: reason)
     }
   }
