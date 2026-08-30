@@ -27,7 +27,7 @@ sources: the Flutter coupling is already tiny and localized.
 ```
 liquid-toasts/
 ├── Package.swift                  # ROOT manifest — the standalone SwiftUI package
-├── swift/
+├── liquid-toasts-swift/
 │   ├── Sources/LiquidToasts/      # core: manager, views, scheduler, metrics, models…
 │   ├── Tests/LiquidToastsTests/
 │   └── Example/                   # (later) tiny native demo app
@@ -40,7 +40,7 @@ liquid-toasts/
 │       └── liquid_toasts/         # plugin Swift package
 │           ├── Package.swift      # targets: LiquidToasts (vendored core) + liquid_toasts (bridge)
 │           └── Sources/
-│               ├── LiquidToasts/      # VENDORED copy of swift/Sources/LiquidToasts (script-synced, CI-checked)
+│               ├── LiquidToasts/      # VENDORED copy of liquid-toasts-swift/Sources/LiquidToasts (script-synced, CI-checked)
 │               └── liquid_toasts/     # bridge only: LiquidToastsPlugin.swift, WireDecoding.swift, PrivacyInfo
 ├── tool/                          # record_demo.sh, sync_ios_sources.sh
 ├── docs/
@@ -48,15 +48,15 @@ liquid-toasts/
 └── .github/workflows/
 ```
 
-### Why `Package.swift` sits at the repo root (not inside `swift/`)
+### Why `Package.swift` sits at the repo root (not inside `liquid-toasts-swift/`)
 
 SwiftPM can only resolve a git URL whose **repository root** contains
 `Package.swift` — it cannot point at a subdirectory of a repo. So for
 `https://github.com/SimplifyJobs/liquid-toasts.git` to be installable in
 Xcode, the manifest must live at the root. The manifest is thin; its target
-uses `path: "swift/Sources/LiquidToasts"` so all real content still lives in
-the `swift/` folder. (Alternative considered: auto-mirroring `swift/` into a
-separate `liquid-toasts-swift` repo via subtree-split on tag. Cleaner root,
+uses `path: "liquid-toasts-swift/Sources/LiquidToasts"` so all real content still lives in
+the `liquid-toasts-swift/` folder. (Alternative considered: auto-mirroring the
+folder into a separate standalone repo via subtree-split on tag. Cleaner root,
 but extra infra and two URLs to document — not worth it now; easy to add
 later without breaking anyone if we ever want a pristine standalone repo.)
 
@@ -80,7 +80,7 @@ That rules out the plugin's Swift package reaching outside itself with
 clone in the pub cache) but break pub.dev, and CocoaPods can't reference
 files outside the pod root at all.
 
-So: `swift/Sources/LiquidToasts` is the **single source of truth**, and
+So: `liquid-toasts-swift/Sources/LiquidToasts` is the **single source of truth**, and
 `tool/sync_ios_sources.sh` copies it verbatim into
 `liquid_toasts/ios/liquid_toasts/Sources/LiquidToasts/`. CI fails if the two
 trees differ (`diff -r`). This is the pattern several production plugins use;
@@ -158,8 +158,8 @@ rather than blanket-`public`ing internals. Two layers:
 All moves via `git mv` (history follows):
 
 1. Root `Package.swift`: product `LiquidToasts`, target at
-   `swift/Sources/LiquidToasts`, iOS 17+, privacy manifest resource.
-2. `git mv` core sources → `swift/Sources/LiquidToasts/`; bridge files stay
+   `liquid-toasts-swift/Sources/LiquidToasts`, iOS 17+, privacy manifest resource.
+2. `git mv` core sources → `liquid-toasts-swift/Sources/LiquidToasts/`; bridge files stay
    for the plugin package.
 3. `git mv` `pubspec.yaml lib test android example analysis_options.yaml
    CHANGELOG.md → liquid_toasts/`; move `ios/` (bridge + podspec) under it.
@@ -170,7 +170,7 @@ All moves via `git mv` (history follows):
    `tool/record_demo.sh` gains the new example path; rewrite `CLAUDE.md`
    for the new layout (and delete the folder-rename caveat).
 6. Repo-level `README.md` becomes the umbrella (install matrix, links);
-   `liquid_toasts/README.md` is the pub-facing one; add `swift/README.md`.
+   `liquid_toasts/README.md` is the pub-facing one; add `liquid-toasts-swift/README.md`.
 
 ### Phase 4 — verify everything still builds
 
@@ -223,7 +223,7 @@ come later if we ever want binary distribution).
 | --- | --- |
 | `dart` | `flutter analyze` + `flutter test` in `liquid_toasts/` |
 | `swift` | `xcodebuild build/test` of the root package (iOS Simulator destination) |
-| `sync` | `diff -r swift/Sources/LiquidToasts liquid_toasts/ios/liquid_toasts/Sources/LiquidToasts` |
+| `sync` | `diff -r liquid-toasts-swift/Sources/LiquidToasts liquid_toasts/ios/liquid_toasts/Sources/LiquidToasts` |
 | `example` | `flutter build ios --no-codesign`, SwiftPM and CocoaPods matrix |
 | `release` (tag only) | all of the above + create GitHub Release |
 
