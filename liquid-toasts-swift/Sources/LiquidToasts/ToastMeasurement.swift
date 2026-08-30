@@ -135,7 +135,7 @@ enum ToastPreMeasurement {
       font = base
     }
     let text = (label as NSString).boundingRect(
-      with: CGSize(width: .greatestFiniteMagnitude, height: .greatestFiniteMagnitude),
+      with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
       options: [.usesLineFragmentOrigin, .usesFontLeading],
       attributes: [.font: font],
       context: nil)
