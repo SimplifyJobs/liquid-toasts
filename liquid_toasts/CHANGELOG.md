@@ -1,10 +1,11 @@
 ## 0.8.0
 
-**Monorepo restructure.** The SwiftUI renderer is now a standalone Swift package
-that native iOS apps can install straight from GitHub, and the Flutter plugin
-lives beside it in the same repo, consuming it by relative path. **The Dart API
-and the wire protocol are unchanged** — no call site needs editing; everything
-below is about how the package is shipped and installed.
+**Monorepo restructure, plus two API removals.** The SwiftUI renderer is now a
+standalone Swift package that native iOS apps can install straight from GitHub,
+and the Flutter plugin lives beside it in the same repo, consuming it by
+relative path. **`protocolVersion` stays `1`** — the two sides remain wire
+compatible in both directions; the Dart API loses the long-deprecated legacy
+facade and one parameter that never did anything.
 
 * **Standalone `LiquidToasts` Swift package** — the iOS renderer ships on its
   own, installable in any iOS app from
@@ -34,6 +35,24 @@ below is about how the package is shipped and installed.
         ref: v0.8.0
         path: liquid_toasts
   ```
+* **BREAKING — the deprecated `LiquidToasts` facade is removed**, along with
+  `LoadingToast` and `showLoading`. Every member has a one-line equivalent on
+  the global `toast`, which has always driven the same engine:
+  `LiquidToasts.success('Hi')` → `toast.success('Hi')` (the handle comes back
+  synchronously now, so drop the `await`), `LiquidToasts.show(Toast(...))` →
+  `toast.raw(Toast(...))`, `LiquidToasts.showLoading(f, config:
+  LoadingToast(...))` → `toast.promise(f, loading:, success:, error:)`; and
+  `dismiss`, `dismissAll`, `setDefaults`, `queryGeometry`,
+  `errorMessageResolver`, `activeCount` and `activeIds` read the same on
+  `toast`.
+* **BREAKING — `useDynamicIslandOrigin` is removed** from `Toast`, every
+  `toast.*` method, `ToastHandle.update`, and the native `LiquidToast` facade.
+  No renderer on either platform ever consulted it, so dropping the argument
+  changes nothing you can see. Its wire key is gone too — both decoders already
+  defaulted when it was absent, so `protocolVersion` stays `1`. The device
+  geometry / cutout snapshot (`toast.queryGeometry()`) still reports the
+  cutout (`hasDynamicIsland`, `cutoutType`, `exclusionRect`), but its
+  `supportsDynamicIslandOrigin` key is gone with the feature.
 * **The checkout-folder rename caveat is gone** — the plugin folder inside the
   repo is already named `liquid_toasts`, so Flutter's SwiftPM integration
   derives the right package identity in every install mode (git, path, or a

@@ -51,7 +51,7 @@ Every variant returns a `LiquidToastHandle` (discardable) and takes the same
 options — `title:`, `icon:` (an SF Symbol name), `image: UIImage`, `style:`,
 `position:`, `duration:`, `action:`, `onTap:`, `tapToDismiss:`, `groupKey:`,
 `progress:`, `progressStyle:`, `haptic:`, `accessibilityLabel:`, `maxLines:`,
-`titleMaxLines:`, `useDynamicIslandOrigin:`.
+`titleMaxLines:`.
 
 ```swift
 LiquidToast.show(

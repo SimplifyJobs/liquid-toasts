@@ -9,7 +9,7 @@ import 'src/toast_event.dart';
 
 /// The platform interface for `liquid_toasts`.
 ///
-/// The Dart facade ([LiquidToasts]) talks only to [instance]; platform
+/// The Dart engine behind `toast` talks only to [instance]; platform
 /// implementations (currently the iOS method channel) subclass this.
 abstract class LiquidToastsPlatform extends PlatformInterface {
   LiquidToastsPlatform() : super(token: _token);

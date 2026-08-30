@@ -93,7 +93,6 @@ extension ToastModel {
       state: map.enumValue("state", default: .static),
       persistent: map.bool("persistent", default: false),
       durationMs: map.int("durationMs"),
-      useDynamicIslandOrigin: map.bool("useDynamicIslandOrigin", default: true),
       progress: map.double("progress"),
       progressStyle: map.enumValue("progressStyle", default: .linear),
       groupKey: map["groupKey"] as? String,

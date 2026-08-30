@@ -73,9 +73,8 @@ public final class LiquidToastHandle {
   /// content in place.
   ///
   /// Passing nil means *keep* — to clear a value (drop the title, the action,
-  /// the progress bar) show a fresh toast instead. `groupKey` and
-  /// `useDynamicIslandOrigin` are fixed at show time and are deliberately
-  /// absent: the renderer ignores them on a morph.
+  /// the progress bar) show a fresh toast instead. `groupKey` is fixed at show
+  /// time and is deliberately absent: the renderer ignores it on a morph.
   ///
   /// Returns whether it was applied (false when the toast is already gone — an
   /// expected race, not an error).

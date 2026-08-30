@@ -121,9 +121,9 @@ commands) and an event channel (native→Dart lifecycle events).
   where omitted-vs-explicit-null duration is resolved
   (explicit > `LiquidToastsConfig.defaultDuration` > `SemanticDefaults`).
   A null `Toast.position` resolves to the config default in the engine.
-- `LiquidToasts` (`lib/liquid_toasts.dart`) — the **deprecated** legacy facade;
-  one-line delegates over the engine that keep the old contracts (its `show`
-  awaits the platform ack via `engine.settle`). Removed at 1.0.
+- `lib/liquid_toasts.dart` — the package barrel: the exports plus the top-level
+  `toast` constant. (The legacy `LiquidToasts` static facade lived here and was
+  removed in 0.8.0.)
 - `LiquidToastsPlatform` (`lib/liquid_toasts_platform_interface.dart`) — the
   `PlatformInterface` the engine talks to; swap `.instance` with a fake in tests.
 - `MethodChannelLiquidToasts` (`lib/liquid_toasts_method_channel.dart`) — the iOS
@@ -133,7 +133,7 @@ commands) and an event channel (native→Dart lifecycle events).
   all constructors funnel through a canonical private `_raw` ctor),
   `semantic_defaults.dart` (the ONLY home of per-semantic duration/maxLines/
   haptic defaults), `toast_action.dart`, `toast_handle.dart` (patch-style
-  `update(...)` + `replace(Toast)`), `loading_toast.dart` (deprecated),
+  `update(...)` + `replace(Toast)`),
   `toast_event.dart` (inbound events + `ToastDismissReason`), `toast_style.dart`,
   `toast_position.dart`, `liquid_toasts_config.dart`, `ids.dart` (id minting).
 
@@ -259,8 +259,8 @@ When changing anything that crosses the channel, keep both sides in lockstep:
 
 ### Promise / loading contract
 
-`toast.promise<T>(future, ...)` (and the deprecated `showLoading`, both backed
-by `ToastEngine.promiseWith`) shows a spinner, then morphs to success/error.
+`toast.promise<T>(future, ...)` (backed by `ToastEngine.promiseWith`) shows a
+spinner, then morphs to success/error.
 It **returns the future's value / rethrows its error** — the visual is
 best-effort (skipped if the toast was already dismissed; a throwing builder is
 logged and never corrupts the outcome) but the caller always owns the result.
@@ -280,9 +280,7 @@ misuse throws `ArgumentError` at the call site.
   `@visibleForTesting` — use them rather than reaching into private state.
   `ToastEngine.instance.settle(id)` (import `src/toast_engine.dart`) awaits a
   toast's queued platform ops — use it instead of pumping arbitrary delays.
-- `liquid_toasts/test/toaster_test.dart` covers the new API;
-  `liquid_toasts/test/legacy_facade_test.dart` is per-member smoke coverage of
-  the deprecated facade (keep it green until the 1.0 removal).
+- `liquid_toasts/test/toaster_test.dart` covers the `toast` API end to end.
 - Native behaviors that unit tests can't reach have scripted simulator probes
   in `liquid_toasts/example/lib/`: `bg_probe_demo.dart` (wall-clock deadlines
   across backgrounding + hot-restart flush; drive it with `simctl` foreground/

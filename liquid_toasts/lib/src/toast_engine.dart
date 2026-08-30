@@ -47,9 +47,8 @@ class ToastRegistration {
   Future<void> opChain = Future<void>.value();
 }
 
-/// The internal engine behind both the global `toast` object and the
-/// deprecated [LiquidToasts] facade. Owns the registry, the event
-/// subscription, the handshake, and app-wide defaults.
+/// The internal engine behind the global `toast` object. Owns the registry,
+/// the event subscription, the handshake, and app-wide defaults.
 ///
 /// Not exported from the package barrel — external code goes through
 /// `toast` / `Toaster`.
@@ -167,7 +166,6 @@ class ToastEngine {
     ToastPosition? position,
     Duration? duration,
     ToastAction? action,
-    bool? useDynamicIslandOrigin,
     VoidCallback? onTap,
     bool? tapToDismiss,
     String? groupKey,
@@ -193,7 +191,6 @@ class ToastEngine {
         position: position,
         duration: duration,
         action: action,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
         onTap: onTap,
         tapToDismiss: tapToDismiss,
         groupKey: groupKey,
@@ -246,8 +243,8 @@ class ToastEngine {
   }
 
   /// Waits until every operation enqueued so far for toast [id] has landed.
-  /// Used by the deprecated facade (whose `show` awaited the platform ack)
-  /// and by tests.
+  /// Used by tests, which need the platform ack a synchronous `show` doesn't
+  /// wait for.
   Future<void> settle(String id) =>
       _registry[id]?.opChain ?? Future<void>.value();
 

@@ -29,7 +29,6 @@ class Toast {
     this.position,
     this.duration,
     this.action,
-    this.useDynamicIslandOrigin = true,
     this.onTap,
     this.tapToDismiss = true,
     this.groupKey,
@@ -52,7 +51,6 @@ class Toast {
     ToastPosition? position,
     Duration? duration = const Duration(seconds: 3),
     ToastAction? action,
-    bool useDynamicIslandOrigin = true,
     VoidCallback? onTap,
     bool tapToDismiss = true,
     String? groupKey,
@@ -72,7 +70,6 @@ class Toast {
           position: position,
           duration: duration,
           action: action,
-          useDynamicIslandOrigin: useDynamicIslandOrigin,
           onTap: onTap,
           tapToDismiss: tapToDismiss,
           groupKey: groupKey,
@@ -86,15 +83,14 @@ class Toast {
         );
 
   /// A persistent spinner toast. Typically created for you by
-  /// [LiquidToasts.showLoading], but also usable directly for a manual
-  /// loading state you later [ToastHandle.update] or [ToastHandle.dismiss].
+  /// `toast.promise`, but also usable directly for a manual loading state you
+  /// later [ToastHandle.update] or [ToastHandle.dismiss].
   const Toast.loading({
     required String message,
     String? title,
     String? icon,
     ToastStyleOverride? style,
     ToastPosition? position,
-    bool useDynamicIslandOrigin = true,
     String? groupKey,
     double? progress,
     ToastProgressStyle progressStyle = ToastProgressStyle.linear,
@@ -107,7 +103,6 @@ class Toast {
           icon: icon,
           style: style,
           position: position,
-          useDynamicIslandOrigin: useDynamicIslandOrigin,
           groupKey: groupKey,
           progress: progress,
           progressStyle: progressStyle,
@@ -133,7 +128,6 @@ class Toast {
     required ToastAction? action,
     required VoidCallback? onTap,
     required bool tapToDismiss,
-    required bool useDynamicIslandOrigin,
     required String? groupKey,
     required double? progress,
     required ToastProgressStyle progressStyle,
@@ -154,7 +148,6 @@ class Toast {
         action: action,
         onTap: onTap,
         tapToDismiss: tapToDismiss,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
         groupKey: groupKey,
         progress: progress,
         progressStyle: progressStyle,
@@ -176,7 +169,6 @@ class Toast {
     ToastAction? action,
     VoidCallback? onTap,
     bool tapToDismiss = true,
-    bool useDynamicIslandOrigin = true,
     String? groupKey,
     double? progress,
     ToastProgressStyle progressStyle = ToastProgressStyle.linear,
@@ -197,7 +189,6 @@ class Toast {
         action: action,
         onTap: onTap,
         tapToDismiss: tapToDismiss,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
         groupKey: groupKey,
         progress: progress,
         progressStyle: progressStyle,
@@ -218,7 +209,6 @@ class Toast {
     ToastAction? action,
     VoidCallback? onTap,
     bool tapToDismiss = true,
-    bool useDynamicIslandOrigin = true,
     String? groupKey,
     double? progress,
     ToastProgressStyle progressStyle = ToastProgressStyle.linear,
@@ -239,7 +229,6 @@ class Toast {
         action: action,
         onTap: onTap,
         tapToDismiss: tapToDismiss,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
         groupKey: groupKey,
         progress: progress,
         progressStyle: progressStyle,
@@ -260,7 +249,6 @@ class Toast {
     ToastAction? action,
     VoidCallback? onTap,
     bool tapToDismiss = true,
-    bool useDynamicIslandOrigin = true,
     String? groupKey,
     double? progress,
     ToastProgressStyle progressStyle = ToastProgressStyle.linear,
@@ -281,7 +269,6 @@ class Toast {
         action: action,
         onTap: onTap,
         tapToDismiss: tapToDismiss,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
         groupKey: groupKey,
         progress: progress,
         progressStyle: progressStyle,
@@ -302,7 +289,6 @@ class Toast {
     ToastAction? action,
     VoidCallback? onTap,
     bool tapToDismiss = true,
-    bool useDynamicIslandOrigin = true,
     String? groupKey,
     double? progress,
     ToastProgressStyle progressStyle = ToastProgressStyle.linear,
@@ -323,7 +309,6 @@ class Toast {
         action: action,
         onTap: onTap,
         tapToDismiss: tapToDismiss,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
         groupKey: groupKey,
         progress: progress,
         progressStyle: progressStyle,
@@ -362,10 +347,6 @@ class Toast {
 
   /// At most one action button.
   final ToastAction? action;
-
-  /// Honored only for [ToastPosition.topCenter] on Dynamic Island devices.
-  /// Set false to keep top-center placement but use a plain slide-in.
-  final bool useDynamicIslandOrigin;
 
   /// Tapping the toast body invokes this (in addition to any [tapToDismiss]).
   final VoidCallback? onTap;
@@ -426,7 +407,6 @@ class Toast {
     ToastPosition? position,
     Duration? duration,
     ToastAction? action,
-    bool? useDynamicIslandOrigin,
     VoidCallback? onTap,
     bool? tapToDismiss,
     String? groupKey,
@@ -448,8 +428,6 @@ class Toast {
         position: position ?? this.position,
         duration: duration ?? this.duration,
         action: action ?? this.action,
-        useDynamicIslandOrigin:
-            useDynamicIslandOrigin ?? this.useDynamicIslandOrigin,
         onTap: onTap ?? this.onTap,
         tapToDismiss: tapToDismiss ?? this.tapToDismiss,
         groupKey: groupKey ?? this.groupKey,
@@ -484,7 +462,6 @@ class Toast {
         'state': loading ? 'loading' : 'static',
         'persistent': isPersistent,
         if (!isPersistent) 'durationMs': duration!.inMilliseconds,
-        'useDynamicIslandOrigin': useDynamicIslandOrigin,
         if (progress != null) 'progress': progress,
         if (progress != null) 'progressStyle': progressStyle.name,
         if (groupKey != null) 'groupKey': groupKey,

@@ -72,7 +72,6 @@ final class Toaster {
     String? semanticsLabel,
     int? maxLines,
     int? titleMaxLines,
-    bool useDynamicIslandOrigin = true,
   }) =>
       _semanticShow(
         semantic,
@@ -93,7 +92,6 @@ final class Toaster {
         semanticsLabel: semanticsLabel,
         maxLines: maxLines,
         titleMaxLines: titleMaxLines,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
       );
 
   /// Shows a toast and returns its [ToastHandle] immediately — no `await`
@@ -118,7 +116,6 @@ final class Toaster {
     String? semanticsLabel,
     int? maxLines,
     int? titleMaxLines,
-    bool useDynamicIslandOrigin = true,
   }) =>
       _semanticShow(
         semantic,
@@ -139,7 +136,6 @@ final class Toaster {
         semanticsLabel: semanticsLabel,
         maxLines: maxLines,
         titleMaxLines: titleMaxLines,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
       );
 
   /// A success toast.
@@ -161,7 +157,6 @@ final class Toaster {
     String? semanticsLabel,
     int? maxLines,
     int? titleMaxLines,
-    bool useDynamicIslandOrigin = true,
   }) =>
       _semanticShow(
         ToastSemantic.success,
@@ -182,7 +177,6 @@ final class Toaster {
         semanticsLabel: semanticsLabel,
         maxLines: maxLines,
         titleMaxLines: titleMaxLines,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
       );
 
   /// An error toast (lingers a beat longer by default).
@@ -204,7 +198,6 @@ final class Toaster {
     String? semanticsLabel,
     int? maxLines,
     int? titleMaxLines,
-    bool useDynamicIslandOrigin = true,
   }) =>
       _semanticShow(
         ToastSemantic.error,
@@ -225,7 +218,6 @@ final class Toaster {
         semanticsLabel: semanticsLabel,
         maxLines: maxLines,
         titleMaxLines: titleMaxLines,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
       );
 
   /// A warning toast.
@@ -247,7 +239,6 @@ final class Toaster {
     String? semanticsLabel,
     int? maxLines,
     int? titleMaxLines,
-    bool useDynamicIslandOrigin = true,
   }) =>
       _semanticShow(
         ToastSemantic.warning,
@@ -268,7 +259,6 @@ final class Toaster {
         semanticsLabel: semanticsLabel,
         maxLines: maxLines,
         titleMaxLines: titleMaxLines,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
       );
 
   /// An info toast.
@@ -290,7 +280,6 @@ final class Toaster {
     String? semanticsLabel,
     int? maxLines,
     int? titleMaxLines,
-    bool useDynamicIslandOrigin = true,
   }) =>
       _semanticShow(
         ToastSemantic.info,
@@ -311,7 +300,6 @@ final class Toaster {
         semanticsLabel: semanticsLabel,
         maxLines: maxLines,
         titleMaxLines: titleMaxLines,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
       );
 
   /// A persistent spinner toast. Morph it later with
@@ -329,7 +317,6 @@ final class Toaster {
     String? semanticsLabel,
     int? maxLines,
     int? titleMaxLines,
-    bool useDynamicIslandOrigin = true,
   }) =>
       _engine.show(Toast.loading(
         message: message,
@@ -343,7 +330,6 @@ final class Toaster {
         semanticsLabel: semanticsLabel,
         maxLines: maxLines,
         titleMaxLines: titleMaxLines,
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
       ));
 
   /// Full-control escape hatch. Explicit toast values win; omitted position and
@@ -374,7 +360,6 @@ final class Toaster {
     Object? error,
     ToastPosition? position,
     ToastStyleOverride? style,
-    bool useDynamicIslandOrigin = true,
   }) {
     // Specs are validated eagerly so misuse throws at the call site, not
     // after the future completes.
@@ -384,24 +369,19 @@ final class Toaster {
           message: s,
           position: position,
           style: style,
-          useDynamicIslandOrigin: useDynamicIslandOrigin,
         ),
       _ => throw ArgumentError.value(
           loading, 'loading', 'must be a String or Toast'),
     };
     final successBuilder = switch (success) {
-      null => (T value) => _promisePhase(ToastSemantic.success, 'Done',
-          position, style, useDynamicIslandOrigin),
+      null => (T value) =>
+          _promisePhase(ToastSemantic.success, 'Done', position, style),
       final Toast t => (T value) => t,
-      final String s => (T value) => _promisePhase(
-          ToastSemantic.success, s, position, style, useDynamicIslandOrigin),
+      final String s => (T value) =>
+          _promisePhase(ToastSemantic.success, s, position, style),
       final Toast Function(T) f => f,
-      final String Function(T) f => (T value) => _promisePhase(
-          ToastSemantic.success,
-          f(value),
-          position,
-          style,
-          useDynamicIslandOrigin),
+      final String Function(T) f => (T value) =>
+          _promisePhase(ToastSemantic.success, f(value), position, style),
       _ => throw ArgumentError.value(success, 'success',
           'must be a String, Toast, String Function(value), or Toast Function(value)'),
     };
@@ -410,15 +390,13 @@ final class Toaster {
           ToastSemantic.error,
           _engine.errorMessageResolver?.call(e) ?? e.toString(),
           position,
-          style,
-          useDynamicIslandOrigin),
+          style),
       final Toast t => (Object e, StackTrace _) => t,
-      final String s => (Object e, StackTrace _) => _promisePhase(
-          ToastSemantic.error, s, position, style, useDynamicIslandOrigin),
+      final String s => (Object e, StackTrace _) =>
+          _promisePhase(ToastSemantic.error, s, position, style),
       final Toast Function(Object) f => (Object e, StackTrace _) => f(e),
       final String Function(Object) f => (Object e, StackTrace _) =>
-          _promisePhase(ToastSemantic.error, f(e), position, style,
-              useDynamicIslandOrigin),
+          _promisePhase(ToastSemantic.error, f(e), position, style),
       _ => throw ArgumentError.value(error, 'error',
           'must be a String, Toast, String Function(error), or Toast Function(error)'),
     };
@@ -505,7 +483,6 @@ final class Toaster {
     String? semanticsLabel,
     int? maxLines,
     int? titleMaxLines,
-    bool useDynamicIslandOrigin = true,
   }) {
     final resolvedDuration = identical(duration, _useDefault)
         ? (_engine.config.defaultDuration ??
@@ -530,7 +507,6 @@ final class Toaster {
       semanticsLabel: semanticsLabel,
       maxLines: maxLines,
       titleMaxLines: titleMaxLines,
-      useDynamicIslandOrigin: useDynamicIslandOrigin,
     ));
   }
 
@@ -539,7 +515,6 @@ final class Toaster {
     String message,
     ToastPosition? position,
     ToastStyleOverride? style,
-    bool useDynamicIslandOrigin,
   ) =>
       Toast(
         message: message,
@@ -548,6 +523,5 @@ final class Toaster {
         style: style,
         duration: _engine.config.defaultDuration ??
             SemanticDefaults.durationFor(semantic),
-        useDynamicIslandOrigin: useDynamicIslandOrigin,
       );
 }

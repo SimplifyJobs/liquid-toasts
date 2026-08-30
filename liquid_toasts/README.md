@@ -80,7 +80,6 @@ native surface differs:
 | Renderer | SwiftUI overlay (same window) | Jetpack Compose overlay (decor view) |
 | Surface | Liquid Glass (26+) / `.ultraThinMaterial` (17–25) / opaque | Opaque adaptive surface (dark/light) |
 | Icons | SF Symbols + animated symbol effects | SF Symbol names mapped to Material glyphs (static) |
-| Dynamic Island origin | Yes (top-center) | — (slide-in) |
 | Min version | iOS 17.0 | Android 7.0 (API 24) |
 
 Android renders an **opaque** surface rather than a blur/glass material — same
@@ -237,12 +236,11 @@ without double-counting the status bar or home indicator.
 | `ToastHandle` | Live controller: patch-style `update(...)`, `replace(Toast)`, `dismiss`, `onDismissed` |
 | `ToastStyleOverride` / `ToastColor` | Per-toast `background` (surface) / `tint` (accent) / `foreground` (text, auto-derived from background) / `iconColor` / `glass` / `cornerRadius` overrides (adaptive light/dark; `ToastColor.hex(...)` for hex) |
 | `LiquidToastsConfig` | App-wide position/duration, message/title line limits, minimum safe area, and stack limits |
-| `LiquidToasts` / `LoadingToast` | **Deprecated** legacy facade — working delegates until 1.0 |
 
 ## Migrating from `LiquidToasts`
 
-The old static facade still works (with deprecation hints) and shares the same
-engine, so you can migrate incrementally:
+The old static facade and `LoadingToast` were removed in 0.8.0. Every member has
+a one-line equivalent on `toast`, which shares the same engine:
 
 | Before | After |
 |---|---|

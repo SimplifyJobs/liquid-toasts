@@ -122,7 +122,6 @@ final class LiquidToastCenter {
     accessibilityLabel: String?,
     maxLines: Int?,
     titleMaxLines: Int?,
-    useDynamicIslandOrigin: Bool,
     loading: Bool
   ) -> LiquidToastHandle {
     start()
@@ -141,7 +140,6 @@ final class LiquidToastCenter {
       state: loading ? .loading : .static,
       durationMs: duration.resolvedMilliseconds(
         semantic: semantic, configured: configuration.defaultDuration),
-      useDynamicIslandOrigin: useDynamicIslandOrigin,
       progress: progress,
       progressStyle: progressStyle,
       groupKey: groupKey,
@@ -209,8 +207,7 @@ final class LiquidToastCenter {
     semantic: ToastSemantic,
     message: String,
     position: ToastPositionModel?,
-    style: ToastStyleModel?,
-    useDynamicIslandOrigin: Bool
+    style: ToastStyleModel?
   ) {
     guard let registration = registry[id] else { return }
     var next = ToastModel(
@@ -221,7 +218,6 @@ final class LiquidToastCenter {
       position: position ?? configuration.defaultPosition,
       durationMs: ToastDuration.default.resolvedMilliseconds(
         semantic: semantic, configured: configuration.defaultDuration),
-      useDynamicIslandOrigin: useDynamicIslandOrigin,
       // Carried over: the stack keeps the live toast's group key across a
       // morph, so `lastModel` must too.
       groupKey: registration.lastModel.groupKey,

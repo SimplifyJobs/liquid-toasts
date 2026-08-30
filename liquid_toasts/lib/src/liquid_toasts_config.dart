@@ -7,7 +7,7 @@ import 'toast_style.dart';
 /// What to drop when more toasts are queued than the stack can hold.
 enum ToastDropPolicy { dropOldest, dropNewest }
 
-/// App-wide defaults, applied via [LiquidToasts.setDefaults].
+/// App-wide defaults, applied via `toast.setDefaults`.
 ///
 /// [defaultPosition], [defaultDuration], [defaultGlass], [maxLines] and
 /// [titleMaxLines] are applied when an individual toast omits them.

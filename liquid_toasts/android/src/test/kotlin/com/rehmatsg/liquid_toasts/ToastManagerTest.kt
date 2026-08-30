@@ -67,7 +67,6 @@ internal class ToastManagerTest {
         state = state,
         persistent = persistent,
         durationMs = durationMs,
-        useDynamicIslandOrigin = true,
         progress = null,
         progressStyle = ToastProgressStyle.Linear,
         groupKey = groupKey,

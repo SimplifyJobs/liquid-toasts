@@ -8,9 +8,9 @@ import android.view.View
  * Advisory geometry snapshot for the Dart `queryGeometry` call — the Android
  * analog of `DynamicIslandGeometry.geometrySnapshot`. Key names match the iOS
  * shape where they overlap (`hasDynamicIsland`, `cutoutType`, `safeArea`,
- * `screen`, `supportsDynamicIslandOrigin`, optional `exclusionRect`); Android has
- * no Dynamic Island, so those flags are always false, and `iosVersion` becomes
- * `androidVersion`. All lengths are in dp; `screen.scale` is the display density.
+ * `screen`, optional `exclusionRect`); Android has no Dynamic Island, so that
+ * flag is always false, and `iosVersion` becomes `androidVersion`. All lengths
+ * are in dp; `screen.scale` is the display density.
  */
 internal object Geometry {
     fun snapshot(activity: Activity?): Map<String, Any?> {
@@ -74,7 +74,6 @@ internal object Geometry {
 
         return mapOf(
             "hasDynamicIsland" to false,
-            "supportsDynamicIslandOrigin" to false,
             "cutoutType" to cutoutType,
             "safeArea" to mapOf(
                 "top" to top,

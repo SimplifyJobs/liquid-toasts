@@ -80,16 +80,14 @@ public enum LiquidToast {
     haptic: ToastHapticKind? = nil,
     accessibilityLabel: String? = nil,
     maxLines: Int? = nil,
-    titleMaxLines: Int? = nil,
-    useDynamicIslandOrigin: Bool = true
+    titleMaxLines: Int? = nil
   ) -> LiquidToastHandle {
     present(
       semantic: semantic, message: message, title: title, icon: icon, image: image,
       style: style, position: position, duration: duration, action: action, onTap: onTap,
       tapToDismiss: tapToDismiss, groupKey: groupKey, progress: progress,
       progressStyle: progressStyle, haptic: haptic, accessibilityLabel: accessibilityLabel,
-      maxLines: maxLines, titleMaxLines: titleMaxLines,
-      useDynamicIslandOrigin: useDynamicIslandOrigin, loading: false)
+      maxLines: maxLines, titleMaxLines: titleMaxLines, loading: false)
   }
 
   /// A success toast: green check, success haptic, 3s.
@@ -111,16 +109,14 @@ public enum LiquidToast {
     haptic: ToastHapticKind? = nil,
     accessibilityLabel: String? = nil,
     maxLines: Int? = nil,
-    titleMaxLines: Int? = nil,
-    useDynamicIslandOrigin: Bool = true
+    titleMaxLines: Int? = nil
   ) -> LiquidToastHandle {
     present(
       semantic: .success, message: message, title: title, icon: icon, image: image,
       style: style, position: position, duration: duration, action: action, onTap: onTap,
       tapToDismiss: tapToDismiss, groupKey: groupKey, progress: progress,
       progressStyle: progressStyle, haptic: haptic, accessibilityLabel: accessibilityLabel,
-      maxLines: maxLines, titleMaxLines: titleMaxLines,
-      useDynamicIslandOrigin: useDynamicIslandOrigin, loading: false)
+      maxLines: maxLines, titleMaxLines: titleMaxLines, loading: false)
   }
 
   /// An error toast: red glyph, error haptic, two lines and 4s (errors linger a
@@ -143,16 +139,14 @@ public enum LiquidToast {
     haptic: ToastHapticKind? = nil,
     accessibilityLabel: String? = nil,
     maxLines: Int? = nil,
-    titleMaxLines: Int? = nil,
-    useDynamicIslandOrigin: Bool = true
+    titleMaxLines: Int? = nil
   ) -> LiquidToastHandle {
     present(
       semantic: .error, message: message, title: title, icon: icon, image: image,
       style: style, position: position, duration: duration, action: action, onTap: onTap,
       tapToDismiss: tapToDismiss, groupKey: groupKey, progress: progress,
       progressStyle: progressStyle, haptic: haptic, accessibilityLabel: accessibilityLabel,
-      maxLines: maxLines, titleMaxLines: titleMaxLines,
-      useDynamicIslandOrigin: useDynamicIslandOrigin, loading: false)
+      maxLines: maxLines, titleMaxLines: titleMaxLines, loading: false)
   }
 
   /// A warning toast: amber glyph, warning haptic, two lines.
@@ -174,16 +168,14 @@ public enum LiquidToast {
     haptic: ToastHapticKind? = nil,
     accessibilityLabel: String? = nil,
     maxLines: Int? = nil,
-    titleMaxLines: Int? = nil,
-    useDynamicIslandOrigin: Bool = true
+    titleMaxLines: Int? = nil
   ) -> LiquidToastHandle {
     present(
       semantic: .warning, message: message, title: title, icon: icon, image: image,
       style: style, position: position, duration: duration, action: action, onTap: onTap,
       tapToDismiss: tapToDismiss, groupKey: groupKey, progress: progress,
       progressStyle: progressStyle, haptic: haptic, accessibilityLabel: accessibilityLabel,
-      maxLines: maxLines, titleMaxLines: titleMaxLines,
-      useDynamicIslandOrigin: useDynamicIslandOrigin, loading: false)
+      maxLines: maxLines, titleMaxLines: titleMaxLines, loading: false)
   }
 
   /// An info toast: blue glyph, no haptic.
@@ -205,16 +197,14 @@ public enum LiquidToast {
     haptic: ToastHapticKind? = nil,
     accessibilityLabel: String? = nil,
     maxLines: Int? = nil,
-    titleMaxLines: Int? = nil,
-    useDynamicIslandOrigin: Bool = true
+    titleMaxLines: Int? = nil
   ) -> LiquidToastHandle {
     present(
       semantic: .info, message: message, title: title, icon: icon, image: image,
       style: style, position: position, duration: duration, action: action, onTap: onTap,
       tapToDismiss: tapToDismiss, groupKey: groupKey, progress: progress,
       progressStyle: progressStyle, haptic: haptic, accessibilityLabel: accessibilityLabel,
-      maxLines: maxLines, titleMaxLines: titleMaxLines,
-      useDynamicIslandOrigin: useDynamicIslandOrigin, loading: false)
+      maxLines: maxLines, titleMaxLines: titleMaxLines, loading: false)
   }
 
   /// A persistent spinner toast. Morph it later with `LiquidToastHandle.update`
@@ -234,16 +224,14 @@ public enum LiquidToast {
     progressStyle: ToastProgressStyle = .linear,
     accessibilityLabel: String? = nil,
     maxLines: Int? = nil,
-    titleMaxLines: Int? = nil,
-    useDynamicIslandOrigin: Bool = true
+    titleMaxLines: Int? = nil
   ) -> LiquidToastHandle {
     present(
       semantic: ToastSemantic.none, message: message, title: title, icon: icon, image: nil,
       style: style, position: position, duration: .persistent, action: nil, onTap: nil,
       tapToDismiss: false, groupKey: groupKey, progress: progress,
       progressStyle: progressStyle, haptic: nil, accessibilityLabel: accessibilityLabel,
-      maxLines: maxLines, titleMaxLines: titleMaxLines,
-      useDynamicIslandOrigin: useDynamicIslandOrigin, loading: true)
+      maxLines: maxLines, titleMaxLines: titleMaxLines, loading: true)
   }
 
   // MARK: - Promise
@@ -275,27 +263,23 @@ public enum LiquidToast {
     error errorMessage: ((any Error) -> String)? = nil,
     position: ToastPositionModel? = nil,
     style: ToastStyleModel? = nil,
-    useDynamicIslandOrigin: Bool = true,
     perform work: () async throws -> T
   ) async throws -> T {
     let handle = LiquidToast.loading(
       message,
       style: style,
-      position: position,
-      useDynamicIslandOrigin: useDynamicIslandOrigin)
+      position: position)
     do {
       let value = try await work()
       morph(handle, semantic: .success, message: successMessage?(value) ?? "Done",
-            position: position, style: style,
-            useDynamicIslandOrigin: useDynamicIslandOrigin)
+            position: position, style: style)
       return value
     } catch let failure {
       let text = errorMessage?(failure)
         ?? errorMessageResolver?(failure)
         ?? failure.localizedDescription
       morph(handle, semantic: .error, message: text,
-            position: position, style: style,
-            useDynamicIslandOrigin: useDynamicIslandOrigin)
+            position: position, style: style)
       throw failure
     }
   }
@@ -350,7 +334,6 @@ public enum LiquidToast {
     accessibilityLabel: String?,
     maxLines: Int?,
     titleMaxLines: Int?,
-    useDynamicIslandOrigin: Bool,
     loading: Bool
   ) -> LiquidToastHandle {
     LiquidToastCenter.shared.show(
@@ -372,7 +355,6 @@ public enum LiquidToast {
       accessibilityLabel: accessibilityLabel,
       maxLines: maxLines,
       titleMaxLines: titleMaxLines,
-      useDynamicIslandOrigin: useDynamicIslandOrigin,
       loading: loading)
   }
 
@@ -382,8 +364,7 @@ public enum LiquidToast {
     semantic: ToastSemantic,
     message: String,
     position: ToastPositionModel?,
-    style: ToastStyleModel?,
-    useDynamicIslandOrigin: Bool
+    style: ToastStyleModel?
   ) {
     guard handle.isShowing else { return }
     LiquidToastCenter.shared.morph(
@@ -391,7 +372,6 @@ public enum LiquidToast {
       semantic: semantic,
       message: message,
       position: position,
-      style: style,
-      useDynamicIslandOrigin: useDynamicIslandOrigin)
+      style: style)
   }
 }

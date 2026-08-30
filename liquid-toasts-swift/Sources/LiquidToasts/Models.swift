@@ -250,7 +250,6 @@ public struct ToastModel: Identifiable, Equatable {
   public var state: ToastContentState
   public var persistent: Bool
   public var durationMs: Int?
-  public var useDynamicIslandOrigin: Bool
   public var progress: Double?
   public var progressStyle: ToastProgressStyle
   /// De-dup / replace key: presenting a toast whose key matches a live one
@@ -294,7 +293,6 @@ public struct ToastModel: Identifiable, Equatable {
     state: ToastContentState = .static,
     persistent: Bool = false,
     durationMs: Int? = nil,
-    useDynamicIslandOrigin: Bool = true,
     progress: Double? = nil,
     progressStyle: ToastProgressStyle = .linear,
     groupKey: String? = nil,
@@ -319,7 +317,6 @@ public struct ToastModel: Identifiable, Equatable {
     self.state = state
     self.persistent = persistent
     self.durationMs = durationMs
-    self.useDynamicIslandOrigin = useDynamicIslandOrigin
     self.progress = progress
     self.progressStyle = progressStyle
     self.groupKey = groupKey
