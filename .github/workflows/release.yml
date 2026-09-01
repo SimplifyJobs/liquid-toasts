@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  # The full CI suite (dart / swift / example / android), reused verbatim.
+  checks:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: GitHub Release
+    needs: [checks]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # A tag that disagrees with the shipped version should die here, before a
+      # Release exists to confuse anyone.
+      - name: Verify tag matches pubspec version
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          pubspec_version="$(awk '/^version:/ { print $2; exit }' liquid_toasts/pubspec.yaml)"
+          if [ "$version" != "$pubspec_version" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match liquid_toasts/pubspec.yaml version ${pubspec_version}"
+            exit 1
+          fi
+          echo "Tag ${GITHUB_REF_NAME} matches pubspec version ${pubspec_version}."
+
+      # Release notes = this version's CHANGELOG section (the headers carry no
+      # `v` prefix) + an install block pinned to the tag.
+      - name: Build release notes
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          awk -v header="## ${version}" '
+            $0 == header { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' liquid_toasts/CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::No '## ${version}' section found in liquid_toasts/CHANGELOG.md"
+            exit 1
+          fi
+          cat >> release-notes.md <<EOF
+          ## Install
+
+          Flutter (iOS needs Swift Package Manager mode:
+          \`flutter config --enable-swift-package-manager\`):
+
+          \`\`\`yaml
+          dependencies:
+            liquid_toasts:
+              git:
+                url: https://github.com/${GITHUB_REPOSITORY}.git
+                ref: ${GITHUB_REF_NAME}
+                path: liquid_toasts
+          \`\`\`
+
+          Native iOS — Swift Package Manager:
+
+          \`\`\`swift
+          .package(url: "https://github.com/${GITHUB_REPOSITORY}.git", from: "${version}")
+          \`\`\`
+          EOF
+          cat release-notes.md
+
+      - name: Create the release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release-notes.md

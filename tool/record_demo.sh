@@ -16,7 +16,8 @@
 # The harness contract: the target entrypoint must print
 #   <PREFIX>:<name>:START  / <PREFIX>:<name>:END   around each preview, and
 #   <PREFIX>:DONE           once the reel finishes and the screen is clean.
-# `runDemoReel()` in example/lib/demo_harness.dart prints these for you.
+# `runDemoReel()` in liquid_toasts/example/lib/demo_harness.dart prints these
+# for you.
 #
 # Why 60 fps: the iOS sim captures ~60 fps *while content animates* (its display
 # link is 60 Hz) but almost nothing during static gaps, so the capture is highly
@@ -27,7 +28,8 @@
 #   tool/record_demo.sh --target lib/multiline_demo.dart --prefix MULTILINE
 #
 # Options:
-#   --target PATH     Dart entrypoint, relative to example/ (required)
+#   --target PATH     Dart entrypoint, relative to liquid_toasts/example/
+#                     (required)
 #   --prefix STR      log-marker prefix the harness prints (required)
 #   --out PATH        output mp4 (default: .demos/<target-basename>_vN.mp4,
 #                     auto-versioned; .demos/ is created + gitignored for you)
@@ -75,7 +77,7 @@ done
 # ---- paths & deps --------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(dirname "$SCRIPT_DIR")"
-EXAMPLE="$REPO/example"
+EXAMPLE="$REPO/liquid_toasts/example"
 [[ -d "$EXAMPLE" ]] || die "example app not found at $EXAMPLE"
 [[ -f "$EXAMPLE/$TARGET" ]] || die "target not found: $EXAMPLE/$TARGET"
 for bin in flutter xcrun ffmpeg ffprobe python3; do
@@ -114,7 +116,7 @@ fi
 DEV_NAME="$(xcrun simctl list devices -j | python3 -c \
   "import sys,json; d=json.load(sys.stdin)['devices']; print(next((x['name'] for r in d.values() for x in r if x['udid']=='$DEVICE'),'?'))")"
 echo "▶ device:  $DEV_NAME ($DEVICE)"
-echo "▶ target:  example/$TARGET   prefix: $PREFIX"
+echo "▶ target:  liquid_toasts/example/$TARGET   prefix: $PREFIX"
 
 # ---- temp + cleanup ------------------------------------------------------
 TMP="$(mktemp -d)"
