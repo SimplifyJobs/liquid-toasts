@@ -87,19 +87,32 @@ package root becomes `<clone>/liquid_toasts`.
 
 ### How the plugin consumes the core (SwiftPM-only)
 
-The bridge package at `liquid_toasts/ios/liquid_toasts/` declares:
+The plugin's package at `liquid_toasts/ios/liquid_toasts/` compiles the core
+as a target of its own, over a **symlink** to the one copy of the sources:
+
+```
+Sources/liquid_toasts/    # the bridge
+Sources/LiquidToasts  ->  ../../../../liquid-toasts-swift/Sources/LiquidToasts
+```
 
 ```swift
 dependencies: [
-  .package(name: "liquid-toasts", path: "../../.."),       // the root core package
   .package(name: "FlutterFramework", path: "../FlutterFramework"),
 ]
 ```
 
-This works for the bundled example (path dep) and for consumers installing
-via a pubspec **git** dependency, because pub clones the *entire* repo into
-its cache — `../../..` from the bridge package resolves to the clone root,
-where `Package.swift` lives.
+**The manifest names nothing above its own directory, and that is the whole
+point.** Flutter reaches a plugin package through a symlink in the consuming
+app (`ios/Flutter/ephemeral/Packages/.packages/<plugin>`), and SwiftPM resolves
+the manifest's relative paths against *that symlink's* location, not the
+checkout behind it. A `.package(path: "../../..")` reaching for the repo root
+therefore resolves to the app's own `ios/Flutter/ephemeral`, where no manifest
+exists, and the build fails at package resolution — for an app consuming the
+plugin over a pubspec `git` dependency, before a line of Swift compiles.
+
+The source symlink is safe where a manifest path is not: the filesystem
+follows it from its own real location in the checkout, so it lands on the core
+wherever that checkout sits — pub cache included.
 
 Consequences accepted with the SwiftPM-only decision:
 
@@ -107,19 +120,21 @@ Consequences accepted with the SwiftPM-only decision:
   (`flutter config --enable-swift-package-manager`); document this
   prominently in the README install section. CocoaPods-mode builds will fail
   with a missing-podspec error.
-- pub.dev publishing is off the table for now (`dart pub publish` uploads
-  only the package directory, so `../../..` would dangle). If we ever want
-  pub.dev, we add a release-time vendoring step then — nothing in this
-  layout prevents it.
+- pub.dev publishing is off the table for now (`dart pub publish` uploads only
+  the package directory, and it does not follow the core symlink out of it).
+  If we ever want pub.dev, we add a release-time vendoring step then — nothing
+  in this layout prevents it.
+- A **hybrid** app that adds both the Flutter plugin and the standalone
+  package compiles the core twice, as two modules with two stacks. Pick one
+  side per app; the plugin's own facade is reachable from Swift.
 
-**Verify first (the one structural risk):** Flutter reaches the bridge
-package *through a symlink* (`.symlinks/plugins/…` style). If SwiftPM
-resolved the relative `../../..` against the symlink's location instead of
-the real path, it would escape into the ephemeral build directory and fail.
-Smoke-test this exact setup (a scratch monorepo with a two-level path dep
-consumed by a Flutter example in SwiftPM mode) **before** executing the full
-restructure. If it fails, the fallback is the vendored-copy design from an
-earlier revision of this plan (see git history of this file).
+**The structural constraint to keep in mind on any change here:** the plugin
+package must stay relocatable, because Flutter reaches it through a symlink
+and SwiftPM resolves the manifest's relative paths against that symlink rather
+than the real path. Anything the manifest names must live inside the package
+directory. Test a change to it against a **pubspec `git` dependency**, not just
+the bundled example — the example is a path dependency and resolves through a
+different route, so it stays green where a git consumer breaks.
 
 ## Phased execution
 

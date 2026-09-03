@@ -13,9 +13,19 @@ A **monorepo shipping two packages** built from one SwiftUI implementation:
   `path:`). Native entry point: `LiquidToast.show(…)`.
 - **`liquid_toasts`** (`liquid_toasts/`) — the Flutter **plugin**: a
   context-free Dart API (`toast.success('hi')`) over a native overlay. On iOS
-  it is a *bridge only* — channels and wire decoding — and gets every pixel
-  from the `LiquidToasts` package above, referenced by relative path
-  (`../../..`). Android is implemented inside the plugin in Jetpack Compose.
+  its Swift package carries two targets: the bridge (channels and wire
+  decoding) and the `LiquidToasts` core it renders through, reached by a
+  **symlink** at `ios/liquid_toasts/Sources/LiquidToasts` → the core folder
+  above. Android is implemented inside the plugin in Jetpack Compose.
+
+**The plugin's iOS manifest must never name a path above its own directory.**
+Flutter symlinks that package into the consuming app at
+`ios/Flutter/ephemeral/Packages/.packages/liquid_toasts`, and SwiftPM resolves
+the manifest's relative paths against that symlink rather than the checkout it
+points into — a `path: "../../.."` reaching for the repo root lands in the
+app's ephemeral folder and fails resolution before anything compiles. The
+source symlink is safe where a manifest path is not: the filesystem follows it
+from its own real location, so it lands on the core wherever the checkout sits.
 
 Both render premium, natively-drawn toasts on an overlay above the app —
 springy entrance, per-position vertical stacking, async loading toasts — with
@@ -89,7 +99,9 @@ Package.swift                          # root manifest for the core package
 liquid-toasts-swift/Sources/LiquidToasts/   # the SwiftUI core (Flutter-free)
 liquid_toasts/                         # the Flutter plugin
   lib/  test/  android/  example/
-  ios/liquid_toasts/                   # bridge-only Swift package
+  ios/liquid_toasts/                   # the plugin's Swift package
+    Sources/liquid_toasts/             # the bridge
+    Sources/LiquidToasts -> ../../../../liquid-toasts-swift/Sources/LiquidToasts
 tool/  docs/  assets/                  # repo-level
 ```
 

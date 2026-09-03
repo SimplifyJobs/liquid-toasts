@@ -110,15 +110,25 @@ SwiftPM and pub resolve straight from the tag.
 Package.swift            # root manifest for the standalone SwiftUI package
 liquid-toasts-swift/     # its sources (Sources/LiquidToasts) + native README
 liquid_toasts/           # the Flutter plugin: lib/ test/ android/ example/
-  └── ios/liquid_toasts/ # bridge-only Swift package (channels + wire decoding)
+  └── ios/liquid_toasts/ # the plugin's Swift package: the bridge, plus a
+                         # symlink to the core sources above
 tool/  docs/  assets/
 ```
 
 The root `Package.swift` is thin — a manifest pointing at
 `liquid-toasts-swift/Sources/LiquidToasts` — and lives at the repo root because
 SwiftPM can only resolve a git URL whose repository root holds a manifest. The
-Flutter plugin depends on it by relative path, so the SwiftUI core exists
-exactly once, with no vendored copy to drift.
+plugin's package compiles that same folder through
+`ios/liquid_toasts/Sources/LiquidToasts`, a symlink, so the SwiftUI core exists
+exactly once with no vendored copy to drift.
+
+Why a symlink and not a package dependency: Flutter resolves a plugin through a
+symlink in the consuming app
+(`ios/Flutter/ephemeral/Packages/.packages/<plugin>`), and SwiftPM resolves a
+manifest's relative paths against that symlink rather than the checkout it
+points into. A dependency reaching above the plugin's own folder therefore
+lands in the app's ephemeral directory and fails resolution. The source symlink
+has no such problem — the filesystem follows it from its real location.
 
 ## Docs
 

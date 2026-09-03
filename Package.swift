@@ -9,9 +9,10 @@ import PackageDescription
 // This manifest lives at the REPO ROOT on purpose: SwiftPM can only resolve a
 // git URL whose repository root contains a `Package.swift`, so this is what
 // makes `https://github.com/SimplifyJobs/liquid-toasts.git` installable in
-// Xcode. The manifest is thin — every source file still lives under
-// `liquid-toasts-swift/`, and the Flutter plugin (a separate package under
-// `liquid_toasts/`) consumes this one by relative path.
+// Xcode. The manifest is thin — every source file lives under
+// `liquid-toasts-swift/`. The Flutter plugin's own package (under
+// `liquid_toasts/ios/`) compiles that same folder through a symlink, so the
+// core exists exactly once with no vendored copy to drift.
 let package = Package(
     name: "liquid-toasts",
     platforms: [
