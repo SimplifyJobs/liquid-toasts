@@ -1,6 +1,6 @@
 name: liquid_toasts
 description: "Native toasts for Flutter — SwiftUI on iOS (adaptive Liquid Glass) and Jetpack Compose on Android — with depth stacking and async loading toasts. No BuildContext required."
-version: 0.8.0
+version: 0.8.1
 homepage: https://github.com/SimplifyJobs/liquid-toasts
 repository: https://github.com/SimplifyJobs/liquid-toasts
 

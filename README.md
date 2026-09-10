@@ -52,7 +52,7 @@ the **LiquidToasts** library to your app target.
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/SimplifyJobs/liquid-toasts.git", from: "0.8.0")
+  .package(url: "https://github.com/SimplifyJobs/liquid-toasts.git", from: "0.8.1")
 ],
 targets: [
   .target(name: "App", dependencies: [
@@ -76,7 +76,7 @@ dependencies:
   liquid_toasts:
     git:
       url: https://github.com/SimplifyJobs/liquid-toasts.git
-      ref: v0.8.0
+      ref: v0.8.1
       path: liquid_toasts
 ```
 
