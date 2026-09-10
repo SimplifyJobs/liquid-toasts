@@ -380,6 +380,13 @@ public struct ToastModel: Identifiable, Equatable {
     expectsImage || image != nil || showsCircularProgress || showsIcon
   }
 
+  /// Width of the leading content, shared by live layout and sizing probes.
+  var leadingSlotWidth: CGFloat {
+    if expectsImage || image != nil { return ToastMetrics.avatarSize }
+    if showsCircularProgress { return ToastMetrics.progressRingSize }
+    return showsIcon ? ToastMetrics.iconSlot : 0
+  }
+
   /// Auto-dismiss interval, or nil when persistent / loading.
   var autoDuration: TimeInterval? {
     if persistent || state == .loading { return nil }

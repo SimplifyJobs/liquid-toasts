@@ -10,7 +10,8 @@ struct ToastMeasurementInputs: Equatable {
   var title: String?
   var maxLines: Int
   var hasAction: Bool
-  var showsLeading: Bool
+  var leadingSlotWidth: CGFloat
+  var showsLeading: Bool { leadingSlotWidth > 0 }
   /// Fed back from the live ActionButton's measured width.
   var actionWidth: CGFloat
   var multilineWidth: CGFloat
@@ -49,7 +50,7 @@ struct ToastMeasurementProbes: View, Equatable {
     let leading = ToastMetrics.leadingPadding(multiline: true, hasLeadingSlot: inputs.showsLeading, tallRow: true)
     let trailing = ToastMetrics.trailingPadding(multiline: true, hasAction: inputs.hasAction)
     let spacing = ToastMetrics.rowSpacing(multiline: true)
-    let glyph: CGFloat = inputs.showsLeading ? ToastMetrics.iconSlot + spacing : 0
+    let glyph: CGFloat = inputs.showsLeading ? inputs.leadingSlotWidth + spacing : 0
     // Subtract the action button (measured; estimate until first layout) + spacing.
     let act: CGFloat = inputs.hasAction
       ? (inputs.actionWidth > 0 ? inputs.actionWidth : ToastMetrics.actionWidthEstimate) + spacing
@@ -73,7 +74,7 @@ struct ToastMeasurementProbes: View, Equatable {
   private var widthProbe: some View {
     HStack(spacing: ToastMetrics.rowSpacing(multiline: false)) {
       if inputs.showsLeading {
-        Color.clear.frame(width: ToastMetrics.iconSlot, height: ToastMetrics.iconSlot)
+        Color.clear.frame(width: inputs.leadingSlotWidth, height: inputs.leadingSlotWidth)
       }
       VStack(alignment: .leading, spacing: 2) {
         if let title = inputs.title, !title.isEmpty {
@@ -150,16 +151,17 @@ enum ToastPreMeasurement {
     maxLines: Int,
     hasAction: Bool,
     actionWidth: CGFloat,
-    showsLeading: Bool,
+    leadingSlotWidth: CGFloat,
     deviceWidth: CGFloat
   ) -> Bool {
     // Matches the probe: lineLimit(1) can never report a wrap, and the live
     // handler treats an unknown host width as single-line.
     guard deviceWidth > 0, maxLines > 1 else { return false }
+    let showsLeading = leadingSlotWidth > 0
     let leading = ToastMetrics.leadingPadding(multiline: true, hasLeadingSlot: showsLeading, tallRow: true)
     let trailing = ToastMetrics.trailingPadding(multiline: true, hasAction: hasAction)
     let spacing = ToastMetrics.rowSpacing(multiline: true)
-    let glyph: CGFloat = showsLeading ? ToastMetrics.iconSlot + spacing : 0
+    let glyph: CGFloat = showsLeading ? leadingSlotWidth + spacing : 0
     let act: CGFloat = hasAction
       ? (actionWidth > 0 ? actionWidth : ToastMetrics.actionWidthEstimate) + spacing
       : 0
