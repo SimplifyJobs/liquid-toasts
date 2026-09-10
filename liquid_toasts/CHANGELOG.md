@@ -1,3 +1,10 @@
+## 0.8.1
+
+- Fix iOS toast width measurement to use the rendered avatar, icon, or progress
+  slot width. Titles and subtitles remain on one line when sufficient screen
+  space is available instead of wrapping inside an undersized toast.
+- Add native regression tests for avatar layout and leading-slot measurement.
+
 ## 0.8.0
 
 **Monorepo restructure, plus two API removals.** The SwiftUI renderer is now a

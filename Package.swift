@@ -30,6 +30,11 @@ let package = Package(
                 // required-reason API usage (it uses only public APIs).
                 .process("PrivacyInfo.xcprivacy")
             ]
+        ),
+        .testTarget(
+            name: "LiquidToastsTests",
+            dependencies: ["LiquidToasts"],
+            path: "liquid-toasts-swift/Tests/LiquidToastsTests"
         )
     ]
 )

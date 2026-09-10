@@ -69,7 +69,7 @@ struct ToastView: View {
       maxLines: toast.maxLines,
       hasAction: toast.action != nil,
       actionWidth: premeasuredActionWidth,
-      showsLeading: toast.showsLeadingSlot,
+      leadingSlotWidth: toast.leadingSlotWidth,
       deviceWidth: deviceWidth))
   }
 
@@ -115,7 +115,7 @@ struct ToastView: View {
       title: toast.title,
       maxLines: toast.maxLines,
       hasAction: toast.action != nil,
-      showsLeading: toast.showsLeadingSlot,
+      leadingSlotWidth: toast.leadingSlotWidth,
       actionWidth: actionWidth,
       multilineWidth: multilineWidth)
   }

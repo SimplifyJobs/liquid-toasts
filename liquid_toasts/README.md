@@ -97,7 +97,7 @@ dependencies:
   liquid_toasts:
     git:
       url: https://github.com/SimplifyJobs/liquid-toasts.git
-      ref: v0.8.0
+      ref: v0.8.1
       path: liquid_toasts
 ```
 
